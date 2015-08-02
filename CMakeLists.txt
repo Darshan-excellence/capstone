@@ -273,6 +273,7 @@ if (CAPSTONE_68K_SUPPORT)
     add_definitions(-DCAPSTONE_HAS_68K)
     set(SOURCES_68K
         arch/68K/68KDisassembler.c
+		arch/68K/68KModule.c
         )
     set(HEADERS_68K
 		arch/68K/68KDisassembler.h
