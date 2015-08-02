@@ -107,6 +107,11 @@ int main(int argc, char **argv)
       (cs_mode)0,
       "XCore"
     },
+    {
+      CS_ARCH_68K,
+      (cs_mode)0,
+      "68K"
+    },
   };
 
   // Read input

@@ -65,6 +65,7 @@ typedef enum cs_arch {
 	CS_ARCH_SPARC,		// Sparc architecture
 	CS_ARCH_SYSZ,		// SystemZ architecture
 	CS_ARCH_XCORE,		// XCore architecture
+	CS_ARCH_68K,		// 68K architecture
 	CS_ARCH_MAX,
 	CS_ARCH_ALL = 0xFFFF, // All architectures - for cs_support()
 } cs_arch;
