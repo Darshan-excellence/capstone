@@ -21,6 +21,7 @@ option(CAPSTONE_PPC_SUPPORT "PowerPC support" ON)
 option(CAPSTONE_SPARC_SUPPORT "Sparc support" ON)
 option(CAPSTONE_SYSZ_SUPPORT "SystemZ support" ON)
 option(CAPSTONE_XCORE_SUPPORT "XCore support" ON)
+option(CAPSTONE_68K_SUPPORT "68K support" ON)
 option(CAPSTONE_X86_SUPPORT "x86 support" ON)
 option(CAPSTONE_X86_REDUCE "x86 with reduce instruction sets to minimize library" OFF)
 option(CAPSTONE_X86_ATT_DISABLE "Disable x86 AT&T syntax" OFF)
@@ -268,6 +269,17 @@ if (CAPSTONE_XCORE_SUPPORT)
     set(TEST_SOURCES ${TEST_SOURCES} test_xcore.c)
 endif ()
 
+if (CAPSTONE_68K_SUPPORT)
+    add_definitions(-DCAPSTONE_HAS_68K)
+    set(SOURCES_68K
+        arch/68K/68KDisassembler.c
+        )
+    set(HEADERS_68K
+		arch/68K/68KDisassembler.h
+        )
+    set(TEST_SOURCES ${TEST_SOURCES} test_68k.c)
+endif ()
+
 if (CAPSTONE_OSXKERNEL_SUPPORT)
     add_definitions(-DCAPSTONE_HAS_OSXKERNEL)
 endif ()
@@ -282,6 +294,7 @@ set(ALL_SOURCES
     ${SOURCES_SPARC}
     ${SOURCES_SYSZ}
     ${SOURCES_XCORE}
+    ${SOURCES_68K}
     )
 
 set(ALL_HEADERS
@@ -361,6 +374,7 @@ source_group("Source\\Sparc" FILES ${SOURCES_SPARC})
 source_group("Source\\SystemZ" FILES ${SOURCES_SYSZ})
 source_group("Source\\X86" FILES ${SOURCES_X86})
 source_group("Source\\XCore" FILES ${SOURCES_XCORE})
+source_group("Source\\68K" FILES ${SOURCES_68K})
 
 source_group("Include\\Common" FILES ${HEADERS_COMMON})
 source_group("Include\\Engine" FILES ${HEADERS_ENGINE})
@@ -372,6 +386,7 @@ source_group("Include\\Sparc" FILES ${HEADERS_SPARC})
 source_group("Include\\SystemZ" FILES ${HEADERS_SYSZ})
 source_group("Include\\X86" FILES ${HEADERS_X86})
 source_group("Include\\XCore" FILES ${HEADERS_XCORE})
+source_group("Include\\68K" FILES ${HEADERS_68K})
 
 ## installation
 install(FILES ${HEADERS_COMMON} DESTINATION include/capstone)
