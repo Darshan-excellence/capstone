@@ -108,9 +108,9 @@ int main(int argc, char **argv)
       "XCore"
     },
     {
-      CS_ARCH_68K,
+      CS_ARCH_M68K,
       (cs_mode)0,
-      "68K"
+      "M68K"
     },
   };
 

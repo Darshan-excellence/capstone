@@ -1,12 +1,12 @@
 /* Capstone Disassembly Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2014 */
 
-#ifndef CS_68KDISASSEMBLER_H
-#define CS_68KDISASSEMBLER_H
+#ifndef CS_M68KDISASSEMBLER_H
+#define CS_M68KDISASSEMBLER_H
 
 #include <stdint.h>
 
-#include "../../include/capstone.h"
+#include "capstone/capstone.h"
 #include "../../MCRegisterInfo.h"
 #include "../../MCInst.h"
 

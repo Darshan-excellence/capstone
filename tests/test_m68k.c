@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "../myinttypes.h"
 
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 int main()
 {
