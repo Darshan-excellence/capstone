@@ -9,6 +9,23 @@
 
 static cs_err init(cs_struct *ud)
 {
+	MCRegisterInfo *mri;
+
+	mri = cs_mem_malloc(sizeof(MCRegisterInfo));
+
+	M68K_init(mri);
+
+	ud->printer = M68K_printInst;
+	ud->printer_info = mri;
+	ud->getinsn_info = mri;
+	ud->disasm = M68K_getInstruction;
+	ud->post_printer = M68K_post_printer;
+
+	ud->reg_name = M68K_reg_name;
+	ud->insn_id = M68K_get_insn_id;
+	ud->insn_name = M68K_insn_name;
+	ud->group_name = M68K_group_name;
+
 	return CS_ERR_OK;
 }
 
