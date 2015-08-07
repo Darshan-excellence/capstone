@@ -90,6 +90,7 @@ set(HEADERS_COMMON
     include/capstone/sparc.h
     include/capstone/systemz.h
     include/capstone/xcore.h
+    include/capstone/m68k.h
     include/capstone/platform.h
     )
 
@@ -322,6 +323,7 @@ set(ALL_SOURCES
     ${SOURCES_SPARC}
     ${SOURCES_SYSZ}
     ${SOURCES_XCORE}
+    ${SOURCES_M68K}
     )
 
 set(ALL_HEADERS
