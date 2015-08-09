@@ -33,6 +33,7 @@ void (*arch_destroy[MAX_ARCH]) (cs_struct *) = { NULL };
 
 extern void ARM_enable(void);
 extern void AArch64_enable(void);
+extern void M68K_enable(void);
 extern void Mips_enable(void);
 extern void X86_enable(void);
 extern void PPC_enable(void);
@@ -52,6 +53,9 @@ static void archs_enable(void)
 #endif
 #ifdef CAPSTONE_HAS_ARM64
 	AArch64_enable();
+#endif
+#ifdef CAPSTONE_HAS_M68K
+	M68K_enable();
 #endif
 #ifdef CAPSTONE_HAS_MIPS
 	Mips_enable();
