@@ -1,6 +1,6 @@
 /* Capstone Disassembly Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2015 */
-/* M68K Backend by Daniel Collin <daniel@collin.com> base on Mutshiba m68k emulator core */
+/* M68K Backend by Daniel Collin <daniel@collin.com> */
 
 #include <stdio.h>	// DEBUG
 #include <stdlib.h>
@@ -112,34 +112,42 @@ void M68K_init(MCRegisterInfo *MRI)
 
 void M68K_printInst(MCInst *MI, SStream *O, void *Info)
 {
+	printf("%s\n", __FUNCTION__);
 }
 
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
 {
+	printf("%p %d %p %llx \n", code, (int)code_len, instr, address);
+	printf("%s\n", __FUNCTION__);
 	return false;
 }
 
 const char* M68K_reg_name(csh handle, unsigned int reg)
 {
+	printf("%s\n", __FUNCTION__);
 	return 0;
 }
 
 void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
 {
+	printf("%s\n", __FUNCTION__);
 }
 
 const char* M68K_insn_name(csh handle, unsigned int id)
 {
+	printf("%s\n", __FUNCTION__);
 	return 0;
 }
 
 const char* M68K_group_name(csh handle, unsigned int id)
 {
+	printf("%s\n", __FUNCTION__);
 	return 0;
 }
 
 void M68K_post_printer(csh handle, cs_insn* flat_insn, char* insn_asm, MCInst* mci)
 {
+	printf("%s\n", __FUNCTION__);
 	(void)handle;
 	(void)flat_insn;
 	(void)insn_asm;
