@@ -77,7 +77,7 @@ static MCRegisterDesc M68KRegDesc[] = { // Descriptors
   };
 
   // RRegs Bit set.
-  static uint8_t RRegsBits[] = {
+  static uint8_t DRegsBits[] = {
     0xfe, 0xff, 0x01, 
   };
 
@@ -87,13 +87,13 @@ static MCRegisterDesc M68KRegDesc[] = { // Descriptors
   };
 
   // GRRegs Bit set.
-  static uint8_t GRRegsBits[] = {
+  static uint8_t ARRegsBits[] = {
     0xe0, 0xff, 0x01, 
   };
 
 static MCRegisterClass M68KMCRegisterClasses[] = {
-  { DRegs, RRegsBits, 1, 16, sizeof(RRegsBits), M68K_RRegsRegClassID, 4, 4, 1, 0 },
-  { ARRegs, ARRegsBits, 0, 12, sizeof(GRRegsBits), M68K_GRRegsRegClassID, 4, 4, 1, 1 },
+  { DRegs, DRegsBits, 1, 32, sizeof(DRegsBits), M68K_DRegsRegClassID, 4, 4, 1, 0 },
+  { ARRegs, ARRegsBits, 0, 32, sizeof(ARRegsBits), M68K_ARRegsRegClassID, 4, 4, 1, 1 },
 };
 
 
@@ -107,5 +107,42 @@ void M68K_init(MCRegisterInfo *MRI)
 			0,
 			M68KSubRegIdxLists, 1,
 			0);
+}
+
+
+void M68K_printInst(MCInst *MI, SStream *O, void *Info)
+{
+}
+
+bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
+{
+	return false;
+}
+
+const char* M68K_reg_name(csh handle, unsigned int reg)
+{
+	return 0;
+}
+
+void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
+{
+}
+
+const char* M68K_insn_name(csh handle, unsigned int id)
+{
+	return 0;
+}
+
+const char* M68K_group_name(csh handle, unsigned int id)
+{
+	return 0;
+}
+
+void M68K_post_printer(csh handle, cs_insn* flat_insn, char* insn_asm, MCInst* mci)
+{
+	(void)handle;
+	(void)flat_insn;
+	(void)insn_asm;
+	(void)handle;
 }
 
