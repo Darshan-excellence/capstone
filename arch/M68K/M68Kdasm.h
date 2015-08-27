@@ -30,6 +30,8 @@
 #ifndef M68K__HEADER
 #define M68K__HEADER
 
+#include "../../MCInst.h"
+#include <stdint.h>
 
 /* ======================================================================== */
 /* ============================= CONFIGURATION ============================ */
@@ -157,23 +159,23 @@ typedef enum
  */
 
 /* Read from anywhere */
-unsigned int  m68k_read_memory_8(unsigned int address);
-unsigned int  m68k_read_memory_16(unsigned int address);
-unsigned int  m68k_read_memory_32(unsigned int address);
+unsigned int  m68k_read_memory_8(uint64_t address);
+unsigned int  m68k_read_memory_16(uint64_t address);
+unsigned int  m68k_read_memory_32(uint64_t address);
 
 /* Read data immediately following the PC */
-unsigned int  m68k_read_immediate_16(unsigned int address);
-unsigned int  m68k_read_immediate_32(unsigned int address);
+unsigned int  m68k_read_immediate_16(uint64_t address);
+unsigned int  m68k_read_immediate_32(uint64_t address);
 
 /* Read data relative to the PC */
-unsigned int  m68k_read_pcrelative_8(unsigned int address);
-unsigned int  m68k_read_pcrelative_16(unsigned int address);
-unsigned int  m68k_read_pcrelative_32(unsigned int address);
+unsigned int  m68k_read_pcrelative_8(uint64_t address);
+unsigned int  m68k_read_pcrelative_16(uint64_t address);
+unsigned int  m68k_read_pcrelative_32(uint64_t address);
 
 /* Memory access for the disassembler */
-unsigned int m68k_read_disassembler_8  (unsigned int address);
-unsigned int m68k_read_disassembler_16 (unsigned int address);
-unsigned int m68k_read_disassembler_32 (unsigned int address);
+unsigned int m68k_read_disassembler_8  (uint64_t address);
+unsigned int m68k_read_disassembler_16 (uint64_t address);
+unsigned int m68k_read_disassembler_32 (uint64_t address);
 
 /* Write to anywhere */
 void m68k_write_memory_8(unsigned int address, unsigned int value);
@@ -339,8 +341,7 @@ unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cp
 /* Disassemble 1 instruction using the epecified CPU type at pc.  Stores
  * disassembly in str_buff and returns the size of the instruction in bytes.
  */
-unsigned int m68k_disassemble(char* str_buff, unsigned int pc, unsigned int cpu_type);
-
+unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type);
 
 /* ======================================================================== */
 /* ============================== MAME STUFF ============================== */

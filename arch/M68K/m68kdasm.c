@@ -27,8 +27,6 @@
  * THE SOFTWARE.
  */
 
-
-
 /* ======================================================================== */
 /* ================================ INCLUDES ============================== */
 /* ======================================================================== */
@@ -198,7 +196,7 @@ static unsigned int g_address_mask = 0xffffffff;
 
 static char g_dasm_str[100]; /* string to hold disassembly */
 static char g_helper_str[100]; /* string to hold helpful info */
-static uint g_cpu_pc;        /* program counter */
+static uin64_t g_cpu_pc;        /* program counter */
 static uint g_cpu_ir;        /* instruction register */
 static uint g_cpu_type;
 
@@ -3240,7 +3238,7 @@ static void build_opcode_table(void)
 /* ======================================================================== */
 
 /* Disasemble one instruction at pc and store in str_buff */
-unsigned int m68k_disassemble(char* str_buff, unsigned int pc, unsigned int cpu_type)
+unsigned int m68k_disassemble(char* str_buff, uint64_t pc, unsigned int cpu_type)
 {
 	if(!g_initialized)
 	{

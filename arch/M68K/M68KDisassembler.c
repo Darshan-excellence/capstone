@@ -115,6 +115,42 @@ void M68K_printInst(MCInst *MI, SStream *O, void *Info)
 	printf("%s\n", __FUNCTION__);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+unsigned int m68k_read_disassembler_8(uint64_t address)
+{
+	uint8_t* data = (uint8_t*)(uintptr_t)address;
+	return *data; 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+unsigned int m68k_read_disassembler_16(uint64_t address)
+{
+	uint8_t* data = (uint8_t*)(uintptr_t)address;
+
+	uint16_t v0 = data[0];
+	uint16_t v1 = data[1];
+
+	return (v0 << 8) | v1; 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+unsigned int m68k_read_disassembler_32(unsigned int address)
+{
+	uint8_t* data = (uint8_t*)(uintptr_t)address;
+
+	// test
+
+	uint32_t v0 = data[0]; 
+	uint32_t v1 = data[1];
+	uint32_t v2 = data[2];
+	uint32_t v3 = data[3];
+
+	return (v0 << 24) | (v1 << 16) | (v2 << 8) | v3;
+}
+
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
 {
 	printf("%p %d %p %llx \n", code, (int)code_len, instr, address);
