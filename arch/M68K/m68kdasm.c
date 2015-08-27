@@ -3238,7 +3238,7 @@ static void build_opcode_table(void)
 /* ======================================================================== */
 
 /* Disasemble one instruction at pc and store in str_buff */
-unsigned int m68k_disassemble(char* str_buff, uint64_t pc, unsigned int cpu_type)
+unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type)
 {
 	if(!g_initialized)
 	{
