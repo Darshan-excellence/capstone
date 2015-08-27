@@ -194,6 +194,7 @@ static int  g_initialized = 0;
 /* Address mask to simulate address lines */
 static unsigned int g_address_mask = 0xffffffff;
 
+static MCInst* g_inst;
 static char g_dasm_str[100]; /* string to hold disassembly */
 static char g_helper_str[100]; /* string to hold helpful info */
 static uin64_t g_cpu_pc;        /* program counter */
@@ -2279,7 +2280,8 @@ static void d68000_negx_32(void)
 
 static void d68000_nop(void)
 {
-	sprintf(g_dasm_str, "nop");
+	MCInst_setOpcodePud(g_inst, M68K_INSN_NOP);
+	//sprintf(g_dasm_str, "nop");
 }
 
 static void d68000_not_8(void)
@@ -3240,6 +3242,8 @@ static void build_opcode_table(void)
 /* Disasemble one instruction at pc and store in str_buff */
 unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type)
 {
+	g_inst = inst;
+
 	if(!g_initialized)
 	{
 		build_opcode_table();

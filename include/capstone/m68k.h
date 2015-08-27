@@ -69,6 +69,13 @@ typedef enum m68k_reg {
 	M68K_REG_ENDING,   // <-- mark the end of the list of registers
 } m68k_reg;
 
+//> M68K instruction
+typedef enum m68k_insn {
+	M68K_INS_INVALID = 0,
+
+	M68K_INSN_ILLEGAL,
+	M68K_INSN_NOP,
+} m68k_insn;
 
 #ifdef __cplusplus
 }
