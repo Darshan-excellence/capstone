@@ -141,8 +141,6 @@ unsigned int m68k_read_disassembler_32(unsigned int address)
 {
 	uint8_t* data = (uint8_t*)(uintptr_t)address;
 
-	// test
-
 	uint32_t v0 = data[0]; 
 	uint32_t v1 = data[1];
 	uint32_t v2 = data[2];
