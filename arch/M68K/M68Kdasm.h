@@ -90,6 +90,9 @@ enum
 };
 
 /* Registers used by m68k_get_reg() and m68k_set_reg() */
+
+#if 0
+
 typedef enum
 {
 	/* Real registers */
@@ -133,6 +136,8 @@ typedef enum
 	M68K_REG_IR,		/* Instruction register */
 	M68K_REG_CPU_TYPE	/* Type of CPU being run */
 } m68k_register_t;
+
+#endif
 
 /* ======================================================================== */
 /* ====================== FUNCTIONS CALLED BY THE CPU ===================== */
@@ -330,10 +335,10 @@ void m68k_state_register(const char *type);
  * retrieved using m68k_get_context() or the currently running context.
  * If context is NULL, the currently running CPU context will be used.
  */
-unsigned int m68k_get_reg(void* context, m68k_register_t reg);
+//unsigned int m68k_get_reg(void* context, m68k_register_t reg);
 
 /* Poke values into the internals of the currently running CPU context */
-void m68k_set_reg(m68k_register_t reg, unsigned int value);
+//void m68k_set_reg(m68k_register_t reg, unsigned int value);
 
 /* Check if an instruction is valid for the specified CPU type */
 unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cpu_type);
@@ -348,7 +353,7 @@ unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type);
 /* ======================================================================== */
 
 #if M68K_COMPILE_FOR_MAME == OPT_ON
-#include "m68kmame.h"
+//#include "m68kmame.h"
 #endif /* M68K_COMPILE_FOR_MAME */
 
 

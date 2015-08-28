@@ -14,6 +14,8 @@
 #include "../../MCInstrDesc.h"
 #include "../../MCRegisterInfo.h"
 
+#include "M68Kdasm.h"
+
 enum {
   M68K_NoRegister,
   M68K_SR,
@@ -137,7 +139,7 @@ unsigned int m68k_read_disassembler_16(uint64_t address)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-unsigned int m68k_read_disassembler_32(unsigned int address)
+unsigned int m68k_read_disassembler_32(uint64_t address)
 {
 	uint8_t* data = (uint8_t*)(uintptr_t)address;
 
@@ -151,9 +153,17 @@ unsigned int m68k_read_disassembler_32(unsigned int address)
 
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
 {
+	int s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
+
+	if (s == 0)
+		return false;
+
+	*size = (uint16_t)s;
+
 	printf("%p %d %p %llx \n", code, (int)code_len, instr, address);
 	printf("%s\n", __FUNCTION__);
-	return false;
+
+	return true;
 }
 
 const char* M68K_reg_name(csh handle, unsigned int reg)
