@@ -54,23 +54,23 @@ static uint16_t M68KSubRegIdxLists[] = {
 };
 
 static MCRegisterDesc M68KRegDesc[] = { // Descriptors
-  { 3, 0, 0, 0, 0, 0 },
-  { 38, 1, 1, 0, 1, 0 },
-  { 41, 1, 1, 0, 1, 0 },
-  { 47, 1, 1, 0, 1, 0 },
-  { 44, 1, 1, 0, 1, 0 },
-  { 4, 1, 1, 0, 1, 0 },
-  { 11, 1, 1, 0, 1, 0 },
-  { 14, 1, 1, 0, 1, 0 },
-  { 17, 1, 1, 0, 1, 0 },
-  { 20, 1, 1, 0, 1, 0 },
-  { 23, 1, 1, 0, 1, 0 },
-  { 26, 1, 1, 0, 1, 0 },
-  { 29, 1, 1, 0, 1, 0 },
-  { 32, 1, 1, 0, 1, 0 },
-  { 35, 1, 1, 0, 1, 0 },
+  { 0, 0, 0, 0, 0, 0 },
   { 0, 1, 1, 0, 1, 0 },
-  { 7, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
+  { 0, 1, 1, 0, 1, 0 },
 };
 
   // RRegs Register Class...
@@ -111,49 +111,53 @@ void M68K_init(MCRegisterInfo *MRI)
 			0);
 }
 
-
-void M68K_printInst(MCInst *MI, SStream *O, void *Info)
-{
-	printf("%s\n", __FUNCTION__);
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static uint8_t* s_disassemblyBuffer;
+static uint32_t s_baseAddress;
 
 unsigned int m68k_read_disassembler_8(uint64_t address)
 {
-	uint8_t* data = (uint8_t*)(uintptr_t)address;
-	return *data; 
+	address -= s_baseAddress;
+	return s_disassemblyBuffer[address];
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 unsigned int m68k_read_disassembler_16(uint64_t address)
 {
-	uint8_t* data = (uint8_t*)(uintptr_t)address;
+	address -= s_baseAddress;
 
-	uint16_t v0 = data[0];
-	uint16_t v1 = data[1];
+	uint16_t v0 = s_disassemblyBuffer[address + 0];
+	uint16_t v1 = s_disassemblyBuffer[address + 1];
 
 	return (v0 << 8) | v1; 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 unsigned int m68k_read_disassembler_32(uint64_t address)
 {
-	uint8_t* data = (uint8_t*)(uintptr_t)address;
+	address -= s_baseAddress;
 
-	uint32_t v0 = data[0]; 
-	uint32_t v1 = data[1];
-	uint32_t v2 = data[2];
-	uint32_t v3 = data[3];
+	uint32_t v0 = s_disassemblyBuffer[address + 0];
+	uint32_t v1 = s_disassemblyBuffer[address + 1];
+	uint32_t v2 = s_disassemblyBuffer[address + 2];
+	uint32_t v3 = s_disassemblyBuffer[address + 3];
 
 	return (v0 << 24) | (v1 << 16) | (v2 << 8) | v3;
 }
 
+void M68K_printInst(MCInst* MI, SStream* O, void* Info)
+{
+	switch (MI->Opcode)
+	{
+		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
+	}
+}
+
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
 {
-	int s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
+	int s;
+
+	s_disassemblyBuffer = (uint8_t*)code;
+	s_baseAddress = (uint32_t)address;
+
+	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
 
 	if (s == 0)
 		return false;
@@ -174,7 +178,7 @@ const char* M68K_reg_name(csh handle, unsigned int reg)
 
 void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
 {
-	printf("%s\n", __FUNCTION__);
+	insn->id = id; // These id's matches for 68k
 }
 
 const char* M68K_insn_name(csh handle, unsigned int id)

@@ -300,6 +300,7 @@ endif ()
 if (CAPSTONE_M68K_SUPPORT)
     add_definitions(-DCAPSTONE_HAS_M68K)
     set(SOURCES_M68K
+		arch/M68K/M68Kdasm.c
 		arch/M68K/M68KDisassembler.c
 		arch/M68K/M68KModule.c
     )

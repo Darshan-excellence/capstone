@@ -36,6 +36,10 @@
 #include <string.h>
 #include "M68Kdasm.h"
 
+#include "../../MCInst.h"
+#include "../../MCInstrDesc.h"
+#include "../../MCRegisterInfo.h"
+
 #ifndef DECL_SPEC
 #define DECL_SPEC
 #endif
@@ -197,7 +201,7 @@ static unsigned int g_address_mask = 0xffffffff;
 static MCInst* g_inst;
 static char g_dasm_str[100]; /* string to hold disassembly */
 static char g_helper_str[100]; /* string to hold helpful info */
-static uin64_t g_cpu_pc;        /* program counter */
+static uint g_cpu_pc;        /* program counter */
 static uint g_cpu_ir;        /* instruction register */
 static uint g_cpu_type;
 
@@ -2280,7 +2284,8 @@ static void d68000_negx_32(void)
 
 static void d68000_nop(void)
 {
-	MCInst_setOpcodePud(g_inst, M68K_INSN_NOP);
+	MCInst_setOpcode(g_inst, M68K_INSN_NOP);
+	printf("nop!\n");
 	//sprintf(g_dasm_str, "nop");
 }
 
@@ -3240,7 +3245,7 @@ static void build_opcode_table(void)
 /* ======================================================================== */
 
 /* Disasemble one instruction at pc and store in str_buff */
-unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type)
+unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_type)
 {
 	g_inst = inst;
 
@@ -3283,16 +3288,19 @@ unsigned int m68k_disassemble(MCInst* inst, uint64_t pc, unsigned int cpu_type)
 	g_helper_str[0] = 0;
 	g_cpu_ir = read_imm_16();
 	g_instruction_table[g_cpu_ir]();
-	sprintf(str_buff, "%s%s", g_dasm_str, g_helper_str);
+	//sprintf(str_buff, "%s%s", g_dasm_str, g_helper_str);
 	return g_cpu_pc - pc;
 }
 
 char* m68ki_disassemble_quick(unsigned int pc, unsigned int cpu_type)
 {
+	/*
 	static char buff[100];
 	buff[0] = 0;
 	m68k_disassemble(buff, pc, cpu_type);
 	return buff;
+	*/
+	return 0;
 }
 
 /* Check if the instruction is a valid one */

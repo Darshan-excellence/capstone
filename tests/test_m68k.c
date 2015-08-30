@@ -78,7 +78,8 @@ static void print_insn_detail(cs_insn *ins)
 static void test()
 {
 
-#define M68K_CODE "\x4E\x71\x22\x00\x4E\x75"
+//#define M68K_CODE "\x4E\x71\x22\x00\x4E\x75"
+#define M68K_CODE "\x4E\x71"
 
 	struct platform platforms[] = {
 		{
