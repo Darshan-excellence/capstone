@@ -364,6 +364,9 @@ static uint8_t skipdata_size(cs_struct *handle)
 			// XCore instruction's length can be 2 or 4 bytes,
 			// so we just skip 2 bytes
 			return 2;
+		case CS_ARCH_M68K:
+			// M68K has 2 bytes instruction alignment but contain multibyte instruction so we skip 2 bytes
+			return 2;
 	}
 }
 
