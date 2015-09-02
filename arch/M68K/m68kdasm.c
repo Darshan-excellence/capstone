@@ -575,6 +575,233 @@ static char* get_ea_mode_str(uint instruction, uint size)
 	return mode;
 }
 
+/* Make string of effective address mode */
+void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
+{
+	static char b1[64];
+	static char b2[64];
+	static char* mode = b2;
+	uint extension;
+	uint base;
+	uint outer;
+	char base_reg[4];
+	char index_reg[8];
+	uint preindex;
+	uint postindex;
+	uint comma = 0;
+	uint temp_value;
+
+	/* Switch buffers so we don't clobber on a double-call to this function */
+	mode = mode == b1 ? b2 : b1;
+
+	switch(instruction & 0x3f)
+	{
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+		{
+			/* data register direct */
+			op->address_mode = M68K_RD_DATA;
+			op->reg = M68K_REG_D0 + instruction & 7;
+			break;
+		}
+		case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+		/* address register direct */
+			sprintf(mode, "A%d", instruction&7);
+			break;
+		case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+		/* address register indirect */
+			sprintf(mode, "(A%d)", instruction&7);
+			break;
+		case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+		/* address register indirect with postincrement */
+			sprintf(mode, "(A%d)+", instruction&7);
+			break;
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+		/* address register indirect with predecrement */
+			sprintf(mode, "-(A%d)", instruction&7);
+			break;
+		case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+		/* address register indirect with displacement*/
+			sprintf(mode, "(%s,A%d)", make_signed_hex_str_16(read_imm_16()), instruction&7);
+			break;
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
+		/* address register indirect with index */
+			extension = read_imm_16();
+
+			if(EXT_FULL(extension))
+			{
+				if(EXT_EFFECTIVE_ZERO(extension))
+				{
+					strcpy(mode, "0");
+					break;
+				}
+				base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+				outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+				if(EXT_BASE_REGISTER_PRESENT(extension))
+					sprintf(base_reg, "A%d", instruction&7);
+				else
+					*base_reg = 0;
+				if(EXT_INDEX_REGISTER_PRESENT(extension))
+				{
+					sprintf(index_reg, "%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+					if(EXT_INDEX_SCALE(extension))
+						sprintf(index_reg+strlen(index_reg), "*%d", 1 << EXT_INDEX_SCALE(extension));
+				}
+				else
+					*index_reg = 0;
+				preindex = (extension&7) > 0 && (extension&7) < 4;
+				postindex = (extension&7) > 4;
+
+				strcpy(mode, "(");
+				if(preindex || postindex)
+					strcat(mode, "[");
+				if(base)
+				{
+					strcat(mode, make_signed_hex_str_16(base));
+					comma = 1;
+				}
+				if(*base_reg)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, base_reg);
+					comma = 1;
+				}
+				if(postindex)
+				{
+					strcat(mode, "]");
+					comma = 1;
+				}
+				if(*index_reg)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, index_reg);
+					comma = 1;
+				}
+				if(preindex)
+				{
+					strcat(mode, "]");
+					comma = 1;
+				}
+				if(outer)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, make_signed_hex_str_16(outer));
+				}
+				strcat(mode, ")");
+				break;
+			}
+
+			if(EXT_8BIT_DISPLACEMENT(extension) == 0)
+				sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+			else
+				sprintf(mode, "(%s,A%d,%c%d.%c", make_signed_hex_str_8(extension), instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+			if(EXT_INDEX_SCALE(extension))
+				sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
+			strcat(mode, ")");
+			break;
+		case 0x38:
+		/* absolute short address */
+			sprintf(mode, "$%x.w", read_imm_16());
+			break;
+		case 0x39:
+		/* absolute long address */
+			sprintf(mode, "$%x.l", read_imm_32());
+			break;
+		case 0x3a:
+		/* program counter with displacement */
+			temp_value = read_imm_16();
+			sprintf(mode, "(%s,PC)", make_signed_hex_str_16(temp_value));
+			sprintf(g_helper_str, "; ($%x)", (make_int_16(temp_value) + g_cpu_pc-2) & 0xffffffff);
+			break;
+		case 0x3b:
+		/* program counter with index */
+			extension = read_imm_16();
+
+			if(EXT_FULL(extension))
+			{
+				if(EXT_EFFECTIVE_ZERO(extension))
+				{
+					strcpy(mode, "0");
+					break;
+				}
+				base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+				outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+				if(EXT_BASE_REGISTER_PRESENT(extension))
+					strcpy(base_reg, "PC");
+				else
+					*base_reg = 0;
+				if(EXT_INDEX_REGISTER_PRESENT(extension))
+				{
+					sprintf(index_reg, "%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+					if(EXT_INDEX_SCALE(extension))
+						sprintf(index_reg+strlen(index_reg), "*%d", 1 << EXT_INDEX_SCALE(extension));
+				}
+				else
+					*index_reg = 0;
+				preindex = (extension&7) > 0 && (extension&7) < 4;
+				postindex = (extension&7) > 4;
+
+				strcpy(mode, "(");
+				if(preindex || postindex)
+					strcat(mode, "[");
+				if(base)
+				{
+					strcat(mode, make_signed_hex_str_16(base));
+					comma = 1;
+				}
+				if(*base_reg)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, base_reg);
+					comma = 1;
+				}
+				if(postindex)
+				{
+					strcat(mode, "]");
+					comma = 1;
+				}
+				if(*index_reg)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, index_reg);
+					comma = 1;
+				}
+				if(preindex)
+				{
+					strcat(mode, "]");
+					comma = 1;
+				}
+				if(outer)
+				{
+					if(comma)
+						strcat(mode, ",");
+					strcat(mode, make_signed_hex_str_16(outer));
+				}
+				strcat(mode, ")");
+				break;
+			}
+
+			if(EXT_8BIT_DISPLACEMENT(extension) == 0)
+				sprintf(mode, "(PC,%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+			else
+				sprintf(mode, "(%s,PC,%c%d.%c", make_signed_hex_str_8(extension), EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+			if(EXT_INDEX_SCALE(extension))
+				sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
+			strcat(mode, ")");
+			break;
+		case 0x3c:
+		/* Immediate */
+			sprintf(mode, "%s", get_imm_str_u(size));
+			break;
+		default:
+			sprintf(mode, "INVALID %x", instruction & 0x3f);
+	}
+	//return mode;
+}
 
 
 /* ======================================================================== */
@@ -614,6 +841,29 @@ static char* get_ea_mode_str(uint instruction, uint size)
  * aw  : absolute word
  * al  : absolute long
  */
+
+// example "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+
+static void build_re_1(int opcode, uint8_t size)
+{
+	MCInst_setOpcode(g_inst, M68K_INSN_OR);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	op0->address_mode = M68K_RD_DATA;
+	op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+
+	/*
+	MCInst_setOpcode(g_inst, M68K_INSN_OR);
+	sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	*/
+}
+
 
 static void d68000_illegal(void)
 {
@@ -1542,6 +1792,7 @@ static void d68000_eor_8(void)
 
 static void d68000_eor_16(void)
 {
+
 	sprintf(g_dasm_str, "eor.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
@@ -2284,6 +2535,8 @@ static void d68000_negx_32(void)
 
 static void d68000_nop(void)
 {
+	printf("%p\n", g_inst->flat_insn->detail);
+
 	MCInst_setOpcode(g_inst, M68K_INSN_NOP);
 	printf("nop!\n");
 	//sprintf(g_dasm_str, "nop");
@@ -2326,7 +2579,8 @@ static void d68000_or_re_8(void)
 
 static void d68000_or_re_16(void)
 {
-	sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	build_re_1(M68K_INSN_OR, 2); 
+	//sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_or_re_32(void)

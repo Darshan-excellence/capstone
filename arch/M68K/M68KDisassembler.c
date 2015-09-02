@@ -146,7 +146,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 {
 	switch (MI->Opcode)
 	{
-		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
+		case M68K_INSN_NOP : SStream_concat0(O, "nop a0,d0"); break;
 	}
 }
 

@@ -43,6 +43,8 @@ typedef enum m68k_reg {
 	M68K_REG_ENDING,   // <-- mark the end of the list of registers
 } m68k_reg;
 
+
+//> M68K Addressing Modes
 typedef enum m68k_adress_mode {
 	M68K_RD_DATA,				// Register Direct - Data
 	M68K_RD_ADDRESS,			// Register Direct - Address
@@ -68,7 +70,7 @@ typedef enum m68k_adress_mode {
 
 	M68K_ADA_SHORT,				// Absolute Data Addressing  - Short
 	M68K_ADA_LONG,				// Absolute Data Addressing  - Long
-	M68K_IMMIDATE,				// Absolute Data Addressing  - Long
+	M68K_IMMIDATE,				// Immidate value
 
 } m68k_adress_mode; 
 
@@ -97,10 +99,10 @@ typedef struct m68k_op_mem {
 
 // Instruction operand
 typedef struct cs_m68k_op {
-	m68k_op_type type;	// operand type
-	m68k_adress_mode address_mode;	// addressing mode for this op
+	m68k_adress_mode address_mode;	// addressing mode for
 	union {
 		uint64_t imm;		// immediate value for IMM operand
+		double fimm;
 		m68k_reg reg;	// register value for REG operand
 	};
 } cs_m68k_op;
@@ -111,6 +113,7 @@ typedef struct cs_m68k
 	// or 0 when instruction has no operand.
 	cs_m68k_op operands[2]; // operands for this instruction.
 	uint8_t op_count;
+	uint8_t op_size;	// size of data operand works on in bytes (.b, .w, .l, etc)
 } cs_m68k;
 
 //> M68K instruction
@@ -118,7 +121,10 @@ typedef enum m68k_insn {
 	M68K_INS_INVALID = 0,
 
 	M68K_INSN_ILLEGAL,
+
 	M68K_INSN_NOP,
+	M68K_INSN_OR,
+
 } m68k_insn;
 
 #ifdef __cplusplus
