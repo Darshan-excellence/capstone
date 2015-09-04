@@ -104,6 +104,7 @@ typedef struct cs_m68k_op {
 		uint64_t imm;		// immediate value for IMM operand
 		double fimm;
 		m68k_reg reg;	// register value for REG operand
+		m68k_op_mem mem;
 	};
 } cs_m68k_op;
 

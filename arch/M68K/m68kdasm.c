@@ -603,26 +603,47 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 			op->reg = M68K_REG_D0 + instruction & 7;
 			break;
 		}
+
 		case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
-		/* address register direct */
-			sprintf(mode, "A%d", instruction&7);
+		{
+			/* address register direct */
+			op->address_mode = M68K_RD_ADDRESS;
+			op->reg = M68K_REG_A0 + instruction & 7;
 			break;
+		}
+
 		case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
-		/* address register indirect */
-			sprintf(mode, "(A%d)", instruction&7);
+		{
+			/* address register indirect */
+			op->address_mode = M68K_RI_ADDRESS;
+			op->reg = M68K_REG_A0 + instruction & 7;
 			break;
+		}
+
 		case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
-		/* address register indirect with postincrement */
-			sprintf(mode, "(A%d)+", instruction&7);
+		{
+			/* address register indirect with postincrement */
+			op->address_mode = M68K_RI_ADDRESS_PI;
+			op->reg = M68K_REG_A0 + instruction & 7;
 			break;
+		}
+
 		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
-		/* address register indirect with predecrement */
-			sprintf(mode, "-(A%d)", instruction&7);
+		{
+			/* address register indirect with predecrement */
+			op->address_mode = M68K_RI_ADDRESS_PD;
+			op->reg = M68K_REG_A0 + instruction & 7;
 			break;
+		}
+
 		case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
-		/* address register indirect with displacement*/
-			sprintf(mode, "(%s,A%d)", make_signed_hex_str_16(read_imm_16()), instruction&7);
+		{
+			/* address register indirect with displacement*/
+			op->address_mode = M68K_RI_ADDRESS_D;
+			op->mem.base = M68K_REG_A0 + instruction & 7;
+			op->mem.disp = read_imm_16();
 			break;
+		}
 		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
 		/* address register indirect with index */
 			extension = read_imm_16();
@@ -701,20 +722,34 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 				sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
 			strcat(mode, ")");
 			break;
+
 		case 0x38:
-		/* absolute short address */
-			sprintf(mode, "$%x.w", read_imm_16());
+		{
+			/* absolute short address */
+			op->address_mode = M68K_ADA_SHORT;
+			op->imm = read_imm_16();
 			break;
+		}
+
 		case 0x39:
-		/* absolute long address */
-			sprintf(mode, "$%x.l", read_imm_32());
+		{
+			/* absolute long address */
+			op->address_mode = M68K_ADA_LONG;
+			op->imm = read_imm_32();
 			break;
+		}
+
 		case 0x3a:
-		/* program counter with displacement */
-			temp_value = read_imm_16();
-			sprintf(mode, "(%s,PC)", make_signed_hex_str_16(temp_value));
-			sprintf(g_helper_str, "; ($%x)", (make_int_16(temp_value) + g_cpu_pc-2) & 0xffffffff);
+		{
+			/* program counter with displacement */
+			op->address_mode = M68K_PCI_DISP;
+			op->imm = read_imm_16();
+			//temp_value = read_imm_16();
+			//sprintf(mode, "(%s,PC)", make_signed_hex_str_16(temp_value));
+			//sprintf(g_helper_str, "; ($%x)", (make_int_16(temp_value) + g_cpu_pc-2) & 0xffffffff);
 			break;
+		}
+
 		case 0x3b:
 		/* program counter with index */
 			extension = read_imm_16();
