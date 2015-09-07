@@ -90,7 +90,7 @@ typedef struct m68k_op_mem {
 	m68k_reg base;	// base register (or M68K_REG_INVALID if irrelevant)
 	m68k_reg index;	// index register (or M68K_REG_INVALID if irrelevant)
 	m68k_reg in_base;	// indirect base register (or M68K_REG_INVALID if irrelevant)
-	uint16_t in_displace; // indirect displacement 
+	uint32_t in_displace; // indirect displacement 
 	uint8_t scale;	// scale for index register
 	uint16_t disp;	// displacement value
 	uint8_t  width;	// used for bf* instructions 

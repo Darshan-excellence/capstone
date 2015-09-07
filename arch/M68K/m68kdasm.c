@@ -575,6 +575,114 @@ static char* get_ea_mode_str(uint instruction, uint size)
 	return mode;
 }
 
+static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint size, bool is_pc)
+{
+	uint base;
+	uint outer;
+	char base_reg[4];
+	char index_reg[8];
+	uint preindex;
+	uint postindex;
+	uint comma = 0;
+	uint temp_value;
+
+	extension = read_imm_16();
+
+	if (EXT_FULL(extension))
+	{
+		op->mem.base_reg = M68K_REG_INVALID;
+		op->mem.index_reg = M68K_REG_INVALID;
+
+		/* Not sure how to deal with this?
+		if(EXT_EFFECTIVE_ZERO(extension))
+		{
+			strcpy(mode, "0");
+			break;
+		}
+		*/
+
+		base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+		outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+
+		if (EXT_BASE_REGISTER_PRESENT(extension)) {
+			if (is_pc) {
+				op->mem.base_reg = M68K_REG_PC;
+			} else {
+				op->mem.base_reg = M68K_REG_A0 + instruction & 7;
+			}
+		}
+
+		if (EXT_INDEX_REGISTER_PRESENT(extension))
+		{
+			if (EXT_INDEX_AR(extension)) {
+				op->mem.index_reg = M68K_REG_A0 + EXT_INDEX_REGISTER(extension);
+			} else {
+				op->mem.index_reg = M68K_REG_D0 + EXT_INDEX_REGISTER(extension);
+			}
+
+			op->mem.index_size = EXT_INDEX_LONG(extension) ? 1 : 0;
+
+			if (EXT_INDEX_SCALE(extension)) {
+				op->mem.scale = 1 << EXT_INDEX_SCALE(extension);
+			}
+		}
+
+		preindex = (extension & 7) > 0 && (extension & 7) < 4;
+		postindex = (extension & 7) > 4;
+
+		strcpy(mode, "(");
+		if(preindex || postindex)
+			strcat(mode, "[");
+		if(base)
+		{
+			strcat(mode, make_signed_hex_str_16(base));
+			comma = 1;
+		}
+		if(*base_reg)
+		{
+			if(comma)
+				strcat(mode, ",");
+			strcat(mode, base_reg);
+			comma = 1;
+		}
+		if(postindex)
+		{
+			strcat(mode, "]");
+			comma = 1;
+		}
+		if(*index_reg)
+		{
+			if(comma)
+				strcat(mode, ",");
+			strcat(mode, index_reg);
+			comma = 1;
+		}
+		if(preindex)
+		{
+			strcat(mode, "]");
+			comma = 1;
+		}
+		if(outer)
+		{
+			if(comma)
+				strcat(mode, ",");
+			strcat(mode, make_signed_hex_str_16(outer));
+		}
+		strcat(mode, ")");
+		break;
+	}
+
+	if(EXT_8BIT_DISPLACEMENT(extension) == 0)
+		sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+	else
+		sprintf(mode, "(%s,A%d,%c%d.%c", make_signed_hex_str_8(extension), instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+	if(EXT_INDEX_SCALE(extension))
+		sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
+	strcat(mode, ")");
+	break;
+
+}
+
 /* Make string of effective address mode */
 void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 {
@@ -594,7 +702,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 	/* Switch buffers so we don't clobber on a double-call to this function */
 	mode = mode == b1 ? b2 : b1;
 
-	switch(instruction & 0x3f)
+	switch (instruction & 0x3f)
 	{
 		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
 		{
@@ -644,84 +752,13 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 			op->mem.disp = read_imm_16();
 			break;
 		}
+
 		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
-		/* address register indirect with index */
-			extension = read_imm_16();
-
-			if(EXT_FULL(extension))
-			{
-				if(EXT_EFFECTIVE_ZERO(extension))
-				{
-					strcpy(mode, "0");
-					break;
-				}
-				base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
-				outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
-				if(EXT_BASE_REGISTER_PRESENT(extension))
-					sprintf(base_reg, "A%d", instruction&7);
-				else
-					*base_reg = 0;
-				if(EXT_INDEX_REGISTER_PRESENT(extension))
-				{
-					sprintf(index_reg, "%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-					if(EXT_INDEX_SCALE(extension))
-						sprintf(index_reg+strlen(index_reg), "*%d", 1 << EXT_INDEX_SCALE(extension));
-				}
-				else
-					*index_reg = 0;
-				preindex = (extension&7) > 0 && (extension&7) < 4;
-				postindex = (extension&7) > 4;
-
-				strcpy(mode, "(");
-				if(preindex || postindex)
-					strcat(mode, "[");
-				if(base)
-				{
-					strcat(mode, make_signed_hex_str_16(base));
-					comma = 1;
-				}
-				if(*base_reg)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, base_reg);
-					comma = 1;
-				}
-				if(postindex)
-				{
-					strcat(mode, "]");
-					comma = 1;
-				}
-				if(*index_reg)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, index_reg);
-					comma = 1;
-				}
-				if(preindex)
-				{
-					strcat(mode, "]");
-					comma = 1;
-				}
-				if(outer)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, make_signed_hex_str_16(outer));
-				}
-				strcat(mode, ")");
-				break;
-			}
-
-			if(EXT_8BIT_DISPLACEMENT(extension) == 0)
-				sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-			else
-				sprintf(mode, "(%s,A%d,%c%d.%c", make_signed_hex_str_8(extension), instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-			if(EXT_INDEX_SCALE(extension))
-				sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
-			strcat(mode, ")");
+		{
+			/* address register indirect with index */
+			get_with_index_address_mode(op, instruction, size, false);
 			break;
+		}
 
 		case 0x38:
 		{
@@ -744,98 +781,28 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 			/* program counter with displacement */
 			op->address_mode = M68K_PCI_DISP;
 			op->imm = read_imm_16();
-			//temp_value = read_imm_16();
-			//sprintf(mode, "(%s,PC)", make_signed_hex_str_16(temp_value));
-			//sprintf(g_helper_str, "; ($%x)", (make_int_16(temp_value) + g_cpu_pc-2) & 0xffffffff);
 			break;
 		}
 
 		case 0x3b:
-		/* program counter with index */
-			extension = read_imm_16();
-
-			if(EXT_FULL(extension))
-			{
-				if(EXT_EFFECTIVE_ZERO(extension))
-				{
-					strcpy(mode, "0");
-					break;
-				}
-				base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
-				outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
-				if(EXT_BASE_REGISTER_PRESENT(extension))
-					strcpy(base_reg, "PC");
-				else
-					*base_reg = 0;
-				if(EXT_INDEX_REGISTER_PRESENT(extension))
-				{
-					sprintf(index_reg, "%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-					if(EXT_INDEX_SCALE(extension))
-						sprintf(index_reg+strlen(index_reg), "*%d", 1 << EXT_INDEX_SCALE(extension));
-				}
-				else
-					*index_reg = 0;
-				preindex = (extension&7) > 0 && (extension&7) < 4;
-				postindex = (extension&7) > 4;
-
-				strcpy(mode, "(");
-				if(preindex || postindex)
-					strcat(mode, "[");
-				if(base)
-				{
-					strcat(mode, make_signed_hex_str_16(base));
-					comma = 1;
-				}
-				if(*base_reg)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, base_reg);
-					comma = 1;
-				}
-				if(postindex)
-				{
-					strcat(mode, "]");
-					comma = 1;
-				}
-				if(*index_reg)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, index_reg);
-					comma = 1;
-				}
-				if(preindex)
-				{
-					strcat(mode, "]");
-					comma = 1;
-				}
-				if(outer)
-				{
-					if(comma)
-						strcat(mode, ",");
-					strcat(mode, make_signed_hex_str_16(outer));
-				}
-				strcat(mode, ")");
-				break;
-			}
-
-			if(EXT_8BIT_DISPLACEMENT(extension) == 0)
-				sprintf(mode, "(PC,%c%d.%c", EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-			else
-				sprintf(mode, "(%s,PC,%c%d.%c", make_signed_hex_str_8(extension), EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-			if(EXT_INDEX_SCALE(extension))
-				sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
-			strcat(mode, ")");
+		{
+			/* program counter with index */
+			get_with_index_address_mode(op, instruction, size, true);
 			break;
+		}
+
 		case 0x3c:
-		/* Immediate */
+		{
+			/* Immediate */
 			sprintf(mode, "%s", get_imm_str_u(size));
 			break;
+		}
+
 		default:
+		{
 			sprintf(mode, "INVALID %x", instruction & 0x3f);
+		}
 	}
-	//return mode;
 }
 
 
