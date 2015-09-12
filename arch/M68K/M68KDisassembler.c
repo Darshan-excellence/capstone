@@ -145,14 +145,57 @@ unsigned int m68k_read_disassembler_32(uint64_t address)
 
 void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
+	printf("mode %d\n", op->address_mode);
+
 	switch (op->address_mode)
 	{
 		case M68K_RD_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
 		case M68K_RD_ADDRESS : SStream_concat(O, "a%d", (op->reg - M68K_REG_A0)); break;
 		case M68K_RI_ADDRESS : SStream_concat(O, "(a%d)", (op->reg - M68K_REG_A0)); break;
+		case M68K_RI_ADDRESS_PI : SStream_concat(O, "(a%d)+", (op->reg - M68K_REG_A0)); break;
+		case M68K_RI_ADDRESS_PD : SStream_concat(O, "-(a%d)", (op->reg - M68K_REG_A0)); break;
+		case M68K_RI_ADDRESS_D : SStream_concat(O, "$%x(a%d)", op->mem.disp, (op->reg - M68K_REG_A0)); break;
+
+		case M68K_PCIIWI_BASE : 
+		case M68K_ARIWI_BASE : 
+		{
+			char index_reg_type = 'a';
+			int index_reg_num = 0; 
+
+			if (op->mem.index_reg >= M68K_REG_D0 && op->mem.index_reg <= M68K_REG_D7) {
+				index_reg_num = op->mem.index_reg - M68K_REG_D0; 
+				index_reg_type = 'd';
+			} else {
+				index_reg_num = op->mem.index_reg - M68K_REG_A0; 
+			}
+
+			SStream_concat(O, "(");
+
+			if (op->mem.in_disp > 0)
+				SStream_concat(O, "$%x,", op->mem.in_disp);
+
+			if (op->address_mode == M68K_PCIIWI_BASE) {
+				SStream_concat(O, "pc,%c%d.%c", index_reg_type, index_reg_num, op->mem.index_size ? 'l' : 'w');
+			} else { 
+				if (op->mem.base_reg != M68K_REG_INVALID)
+					SStream_concat(O, "a%d,", op->mem.base_reg - M68K_REG_A0);
+
+				SStream_concat(O, "%c%d.%c", index_reg_type, index_reg_num, op->mem.index_size ? 'l' : 'w');
+			}
+
+			if (op->mem.scale > 0)
+				SStream_concat(O, "*%d)", op->mem.scale);
+			else
+				SStream_concat(O, ")", op->mem.scale);
+
+			break;
+		}
+
 		default:
 			break;
 	}
+
+	printf("end mode %d\n", op->address_mode);
 }
 
 void M68K_printInst(MCInst* MI, SStream* O, void* Info)

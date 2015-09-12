@@ -423,6 +423,8 @@ static char* get_ea_mode_str(uint instruction, uint size)
 				preindex = (extension&7) > 0 && (extension&7) < 4;
 				postindex = (extension&7) > 4;
 
+				printf("-------- %d %d %s %s - %d\n", preindex, postindex, base_reg, index_reg, base); 
+
 				strcpy(mode, "(");
 				if(preindex || postindex)
 					strcat(mode, "[");
@@ -589,6 +591,8 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 
 	extension = read_imm_16();
 
+	op->address_mode = M68K_ARIWI_BASE;
+
 	if (EXT_FULL(extension))
 	{
 		op->mem.base_reg = M68K_REG_INVALID;
@@ -602,8 +606,8 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 		}
 		*/
 
-		base = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
-		outer = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+		op->mem.in_disp = EXT_BASE_DISPLACEMENT_PRESENT(extension) ? (EXT_BASE_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
+		op->mem.out_disp = EXT_OUTER_DISPLACEMENT_PRESENT(extension) ? (EXT_OUTER_DISPLACEMENT_LONG(extension) ? read_imm_32() : read_imm_16()) : 0;
 
 		if (EXT_BASE_REGISTER_PRESENT(extension)) {
 			if (is_pc) {
@@ -635,7 +639,7 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 
 		if (preindex) {
 			op->address_mode = is_pc ? M68K_PCMI_PE : M68K_MI_PE;
-		} else { 
+		} else if (postindex) { 
 			op->address_mode = is_pc ? M68K_PCMI_PI : M68K_MI_PI;
 		}
 
@@ -693,7 +697,6 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 			op->address_mode = M68K_PCIIWI_BASE;
 		} else {
 			op->mem.base_reg = M68K_REG_A0 + (instruction & 7); 
-			op->address_mode = M68K_ARIWI_BASE;
 		}
 		//sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
 	}
@@ -887,7 +890,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 
 static void build_re_1(int opcode, uint8_t size)
 {
-	MCInst_setOpcode(g_inst, M68K_INSN_OR);
+	MCInst_setOpcode(g_inst, opcode);
 
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
@@ -901,6 +904,30 @@ static void build_re_1(int opcode, uint8_t size)
 	op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
+
+	/*
+	MCInst_setOpcode(g_inst, M68K_INSN_OR);
+	sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	*/
+}
+
+static void build_er_1(int opcode, uint8_t size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op1->address_mode = M68K_RD_DATA;
+	op1->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+
 
 	/*
 	MCInst_setOpcode(g_inst, M68K_INSN_OR);
@@ -2599,22 +2626,26 @@ static void d68000_not_32(void)
 
 static void d68000_or_er_8(void)
 {
-	sprintf(g_dasm_str, "or.b    %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_OR, 1);
+	//sprintf(g_dasm_str, "or.b    %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_or_er_16(void)
 {
-	sprintf(g_dasm_str, "or.w    %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_OR, 2);
+	//sprintf(g_dasm_str, "or.w    %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_or_er_32(void)
 {
-	sprintf(g_dasm_str, "or.l    %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_OR, 4);
+	//sprintf(g_dasm_str, "or.l    %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_or_re_8(void)
 {
-	sprintf(g_dasm_str, "or.b    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_OR, 1); 
+	//sprintf(g_dasm_str, "or.b    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_or_re_16(void)
@@ -2625,7 +2656,8 @@ static void d68000_or_re_16(void)
 
 static void d68000_or_re_32(void)
 {
-	sprintf(g_dasm_str, "or.l    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
+	build_re_1(M68K_INSN_OR, 4); 
+	//sprintf(g_dasm_str, "or.l    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_ori_8(void)
@@ -3589,6 +3621,7 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	g_helper_str[0] = 0;
 	g_cpu_ir = read_imm_16();
 	g_instruction_table[g_cpu_ir]();
+	printf("------------- %s\n", g_dasm_str);
 	//sprintf(str_buff, "%s%s", g_dasm_str, g_helper_str);
 	return g_cpu_pc - pc;
 }
