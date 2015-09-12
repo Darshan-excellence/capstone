@@ -585,6 +585,7 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 	uint postindex;
 	uint comma = 0;
 	uint temp_value;
+	uint extension;
 
 	extension = read_imm_16();
 
@@ -630,6 +631,15 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 		preindex = (extension & 7) > 0 && (extension & 7) < 4;
 		postindex = (extension & 7) > 4;
 
+		printf("preindex %d postindex %d\n", preindex, postindex);
+
+		if (preindex) {
+			op->address_mode = is_pc ? M68K_PCMI_PE : M68K_MI_PE;
+		} else { 
+			op->address_mode = is_pc ? M68K_PCMI_PI : M68K_MI_PI;
+		}
+
+		/*
 		strcpy(mode, "(");
 		if(preindex || postindex)
 			strcat(mode, "[");
@@ -669,18 +679,40 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 			strcat(mode, make_signed_hex_str_16(outer));
 		}
 		strcat(mode, ")");
-		break;
+		*/
+
+		return;
 	}
 
-	if(EXT_8BIT_DISPLACEMENT(extension) == 0)
-		sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-	else
-		sprintf(mode, "(%s,A%d,%c%d.%c", make_signed_hex_str_8(extension), instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
-	if(EXT_INDEX_SCALE(extension))
-		sprintf(mode+strlen(mode), "*%d", 1 << EXT_INDEX_SCALE(extension));
-	strcat(mode, ")");
-	break;
+	op->mem.index_reg = (EXT_INDEX_AR(extension) ? M68K_REG_A0 : M68K_REG_D0) + EXT_INDEX_REGISTER(extension);
+	op->mem.index_size = EXT_INDEX_LONG(extension) ? 1 : 0; 
 
+	if (EXT_8BIT_DISPLACEMENT(extension) == 0) {
+		if (is_pc) {
+			op->mem.base_reg = M68K_REG_PC; 
+			op->address_mode = M68K_PCIIWI_BASE;
+		} else {
+			op->mem.base_reg = M68K_REG_A0 + (instruction & 7); 
+			op->address_mode = M68K_ARIWI_BASE;
+		}
+		//sprintf(mode, "(A%d,%c%d.%c", instruction&7, EXT_INDEX_AR(extension) ? 'A' : 'D', EXT_INDEX_REGISTER(extension), EXT_INDEX_LONG(extension) ? 'l' : 'w');
+	}
+	else
+	{
+		if (is_pc) {
+			op->mem.base_reg = M68K_REG_PC; 
+			op->address_mode = M68K_PCIIWI_8_BIT;
+		} else {
+			op->mem.base_reg = M68K_REG_A0 + (instruction & 7); 
+			op->address_mode = M68K_ARIWI_8_BIT;
+		}
+
+		op->mem.disp = extension & 0xff;
+	}
+
+	if (EXT_INDEX_SCALE(extension)) {
+		op->mem.scale = 1 << EXT_INDEX_SCALE(extension);
+	}
 }
 
 /* Make string of effective address mode */
@@ -748,7 +780,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register indirect with displacement*/
 			op->address_mode = M68K_RI_ADDRESS_D;
-			op->mem.base = M68K_REG_A0 + instruction & 7;
+			op->mem.base_reg = M68K_REG_A0 + instruction & 7;
 			op->mem.disp = read_imm_16();
 			break;
 		}

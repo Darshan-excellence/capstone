@@ -87,14 +87,15 @@ typedef enum m68k_op_type {
 // This is associated with M68K_OP_MEM operand type above
 
 typedef struct m68k_op_mem {
-	m68k_reg base;	// base register (or M68K_REG_INVALID if irrelevant)
-	m68k_reg index;	// index register (or M68K_REG_INVALID if irrelevant)
-	m68k_reg in_base;	// indirect base register (or M68K_REG_INVALID if irrelevant)
+	m68k_reg base_reg;		// base register (or M68K_REG_INVALID if irrelevant)
+	m68k_reg index_reg;		// index register (or M68K_REG_INVALID if irrelevant)
+	m68k_reg in_base_reg;	// indirect base register (or M68K_REG_INVALID if irrelevant)
 	uint32_t in_displace; // indirect displacement 
 	uint8_t scale;	// scale for index register
 	uint16_t disp;	// displacement value
 	uint8_t  width;	// used for bf* instructions 
-	uint8_t  offset;	// used for bf* instructions
+	uint8_t offset;	// used for bf* instructions
+	uint8_t index_size; // 0 = w, 1 = l
 } m68k_op_mem;
 
 // Instruction operand
