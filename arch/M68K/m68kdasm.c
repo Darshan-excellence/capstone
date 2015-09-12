@@ -740,7 +740,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* data register direct */
 			op->address_mode = M68K_RD_DATA;
-			op->reg = M68K_REG_D0 + instruction & 7;
+			op->reg = M68K_REG_D0 + (instruction & 7);
 			break;
 		}
 
@@ -748,7 +748,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register direct */
 			op->address_mode = M68K_RD_ADDRESS;
-			op->reg = M68K_REG_A0 + instruction & 7;
+			op->reg = M68K_REG_A0 + (instruction & 7);
 			break;
 		}
 
@@ -756,7 +756,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register indirect */
 			op->address_mode = M68K_RI_ADDRESS;
-			op->reg = M68K_REG_A0 + instruction & 7;
+			op->reg = M68K_REG_A0 + (instruction & 7);
 			break;
 		}
 
@@ -764,7 +764,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register indirect with postincrement */
 			op->address_mode = M68K_RI_ADDRESS_PI;
-			op->reg = M68K_REG_A0 + instruction & 7;
+			op->reg = M68K_REG_A0 + (instruction & 7);
 			break;
 		}
 
@@ -772,7 +772,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register indirect with predecrement */
 			op->address_mode = M68K_RI_ADDRESS_PD;
-			op->reg = M68K_REG_A0 + instruction & 7;
+			op->reg = M68K_REG_A0 + (instruction & 7);
 			break;
 		}
 
@@ -780,7 +780,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* address register indirect with displacement*/
 			op->address_mode = M68K_RI_ADDRESS_D;
-			op->mem.base_reg = M68K_REG_A0 + instruction & 7;
+			op->mem.base_reg = M68K_REG_A0 + (instruction & 7);
 			op->mem.disp = read_imm_16();
 			break;
 		}
@@ -825,8 +825,15 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 
 		case 0x3c:
 		{
-			/* Immediate */
-			sprintf(mode, "%s", get_imm_str_u(size));
+			op->address_mode = M68K_IMMIDATE;
+
+			if (size == 0)
+				op->imm = read_imm_8() & 0xff;
+			else if(size == 1)
+				op->imm = read_imm_16() & 0xffff;
+			else
+				op->imm = read_imm_32() & 0xffffffff;
+
 			break;
 		}
 
@@ -883,6 +890,7 @@ static void build_re_1(int opcode, uint8_t size)
 	MCInst_setOpcode(g_inst, M68K_INSN_OR);
 
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
 	info->op_count = 2;
 	info->op_size = size; 
 
@@ -891,6 +899,8 @@ static void build_re_1(int opcode, uint8_t size)
 	
 	op0->address_mode = M68K_RD_DATA;
 	op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+
+	get_ea_mode_op(op1, g_cpu_ir, size);
 
 	/*
 	MCInst_setOpcode(g_inst, M68K_INSN_OR);
@@ -2569,11 +2579,7 @@ static void d68000_negx_32(void)
 
 static void d68000_nop(void)
 {
-	printf("%p\n", g_inst->flat_insn->detail);
-
 	MCInst_setOpcode(g_inst, M68K_INSN_NOP);
-	printf("nop!\n");
-	//sprintf(g_dasm_str, "nop");
 }
 
 static void d68000_not_8(void)
@@ -3536,6 +3542,13 @@ static void build_opcode_table(void)
 unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_type)
 {
 	g_inst = inst;
+
+	inst->Opcode = 0;
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	if (info)
+		memset(info, 0, sizeof(cs_m68k));
 
 	if(!g_initialized)
 	{

@@ -124,6 +124,7 @@ unsigned int m68k_read_disassembler_16(uint64_t address)
 {
 	address -= s_baseAddress;
 
+
 	uint16_t v0 = s_disassemblyBuffer[address + 0];
 	uint16_t v1 = s_disassemblyBuffer[address + 1];
 
@@ -142,12 +143,50 @@ unsigned int m68k_read_disassembler_32(uint64_t address)
 	return (v0 << 24) | (v1 << 16) | (v2 << 8) | v3;
 }
 
+void printAddressingMode(SStream* O, const cs_m68k_op* op)
+{
+	switch (op->address_mode)
+	{
+		case M68K_RD_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
+		case M68K_RD_ADDRESS : SStream_concat(O, "a%d", (op->reg - M68K_REG_A0)); break;
+		case M68K_RI_ADDRESS : SStream_concat(O, "(a%d)", (op->reg - M68K_REG_A0)); break;
+		default:
+			break;
+	}
+}
+
 void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 {
+	printf("MI->Opcode %d\n", MI->Opcode);
+
+	cs_m68k* info = &MI->flat_insn->detail->m68k;
+
 	switch (MI->Opcode)
 	{
-		case M68K_INSN_NOP : SStream_concat0(O, "nop a0,d0"); break;
+		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
+		case M68K_INSN_OR : SStream_concat0(O, "or"); break;
 	}
+
+	switch (info->op_size)
+	{
+		case 1 : SStream_concat0(O, ".b"); break;
+		case 2 : SStream_concat0(O, ".w"); break;
+		case 4 : SStream_concat0(O, ".l"); break;
+	}
+
+	if (info->op_count == 0)
+		return;
+	
+	SStream_concat0(O, " ");
+
+	printAddressingMode(O, &info->operands[0]);
+
+	if (info->op_count == 1)
+		return;
+
+	SStream_concat0(O, ",");
+
+	printAddressingMode(O, &info->operands[1]);
 }
 
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
@@ -156,6 +195,8 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
+
+	printf("getInstruction: %d %p\n", (int)address, s_disassemblyBuffer);
 
 	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
 
