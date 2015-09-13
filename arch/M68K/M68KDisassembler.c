@@ -157,8 +157,6 @@ const char* getRegName(m68k_reg reg)
 
 void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
-	printf("mode %d\n", op->address_mode);
-
 	switch (op->address_mode)
 	{
 		case M68K_RD_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
@@ -243,8 +241,6 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		default:
 			break;
 	}
-
-	printf("end mode %d\n", op->address_mode);
 }
 
 void M68K_printInst(MCInst* MI, SStream* O, void* Info)
@@ -257,6 +253,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 	{
 		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
 		case M68K_INSN_OR : SStream_concat0(O, "or"); break;
+		case M68K_INSN_AND : SStream_concat0(O, "and"); break;
 	}
 
 	switch (info->op_size)
@@ -312,6 +309,13 @@ void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
 
 const char* M68K_insn_name(csh handle, unsigned int id)
 {
+	switch (id)
+	{
+		case M68K_INSN_NOP : return "nop";
+		case M68K_INSN_OR : return "or";
+		case M68K_INSN_AND : return "and";
+	}
+
 	return 0;
 }
 

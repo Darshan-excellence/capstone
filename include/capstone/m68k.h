@@ -127,6 +127,7 @@ typedef enum m68k_insn {
 
 	M68K_INSN_NOP,
 	M68K_INSN_OR,
+	M68K_INSN_AND,
 
 } m68k_insn;
 
