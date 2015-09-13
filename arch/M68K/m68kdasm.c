@@ -898,7 +898,7 @@ static void build_er_gen_1(bool isDreg, int opcode, uint8_t size)
 		op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
 	} else {
 		op1->address_mode = M68K_RD_ADDRESS;
-		op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+		op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7;
 	}
 }
 
@@ -929,6 +929,28 @@ static void build_rr(int opcode, uint8_t size, int imm)
 		op2->address_mode = M68K_IMMIDATE;
 		op2->imm = imm;
 	}
+}
+
+static void build_r(int opcode, uint8_t size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	cs_m68k_op* op2 = &info->operands[2];
+	
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op0->address_mode = M68K_RD_DATA;
+	op0->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
+
+	op1->address_mode = M68K_RD_DATA;
+	op1->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 }
 
 static void build_imm_ea(int opcode, uint8_t size, int imm)
@@ -1175,20 +1197,20 @@ static void d68000_and_re_32(void)
 
 static void d68000_andi_8(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "andi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ANDI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "andi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_andi_16(void)
 {
-	char* str = get_imm_str_u16();
-	sprintf(g_dasm_str, "andi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ANDI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "andi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_andi_32(void)
 {
-	char* str = get_imm_str_u32();
-	sprintf(g_dasm_str, "andi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ANDI, 4, read_imm_32());
+	//sprintf(g_dasm_str, "andi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_andi_to_ccr(void)
@@ -1218,17 +1240,20 @@ static void d68000_asr_s_32(void)
 
 static void d68000_asr_r_8(void)
 {
-	sprintf(g_dasm_str, "asr.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASR, 1);
+	//sprintf(g_dasm_str, "asr.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asr_r_16(void)
 {
-	sprintf(g_dasm_str, "asr.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASR, 2);
+	//sprintf(g_dasm_str, "asr.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asr_r_32(void)
 {
-	sprintf(g_dasm_str, "asr.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASR, 4);
+	//sprintf(g_dasm_str, "asr.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asr_ea(void)
@@ -1253,17 +1278,20 @@ static void d68000_asl_s_32(void)
 
 static void d68000_asl_r_8(void)
 {
-	sprintf(g_dasm_str, "asl.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASL, 1);
+	//sprintf(g_dasm_str, "asl.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asl_r_16(void)
 {
-	sprintf(g_dasm_str, "asl.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASL, 2);
+	//sprintf(g_dasm_str, "asl.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asl_r_32(void)
 {
-	sprintf(g_dasm_str, "asl.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ASL, 4);
+	//sprintf(g_dasm_str, "asl.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_asl_ea(void)
@@ -1952,20 +1980,21 @@ static void d68000_eor_32(void)
 
 static void d68000_eori_8(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "eori.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_EORI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "eori.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_eori_16(void)
 {
-	char* str = get_imm_str_u16();
-	sprintf(g_dasm_str, "eori.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INSN_EORI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "eori.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_eori_32(void)
 {
-	char* str = get_imm_str_u32();
-	sprintf(g_dasm_str, "eori.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INSN_EORI, 4, read_imm_32());
+	//char* str = get_imm_str_u32();
+	//sprintf(g_dasm_str, "eori.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_eori_to_ccr(void)
@@ -1980,7 +2009,8 @@ static void d68000_eori_to_sr(void)
 
 static void d68000_exg_dd(void)
 {
-	sprintf(g_dasm_str, "exg     D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_EXG, 0);
+	//sprintf(g_dasm_str, "exg     D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_exg_aa(void)
@@ -2052,17 +2082,20 @@ static void d68000_lsr_s_32(void)
 
 static void d68000_lsr_r_8(void)
 {
-	sprintf(g_dasm_str, "lsr.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSR, 1);
+	//sprintf(g_dasm_str, "lsr.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsr_r_16(void)
 {
-	sprintf(g_dasm_str, "lsr.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSR, 2);
+	//sprintf(g_dasm_str, "lsr.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsr_r_32(void)
 {
-	sprintf(g_dasm_str, "lsr.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSR, 4);
+	//sprintf(g_dasm_str, "lsr.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsr_ea(void)
@@ -2087,17 +2120,20 @@ static void d68000_lsl_s_32(void)
 
 static void d68000_lsl_r_8(void)
 {
-	sprintf(g_dasm_str, "lsl.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSL, 1);
+	//sprintf(g_dasm_str, "lsl.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsl_r_16(void)
 {
-	sprintf(g_dasm_str, "lsl.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSL, 2);
+	//sprintf(g_dasm_str, "lsl.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsl_r_32(void)
 {
-	sprintf(g_dasm_str, "lsl.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_LSL, 4);
+	//sprintf(g_dasm_str, "lsl.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_lsl_ea(void)
@@ -2807,17 +2843,20 @@ static void d68000_ror_s_32(void)
 
 static void d68000_ror_r_8(void)
 {
-	sprintf(g_dasm_str, "ror.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROR, 1);
+	//sprintf(g_dasm_str, "ror.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_ror_r_16(void)
 {
-	sprintf(g_dasm_str, "ror.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROR, 2);
+	//sprintf(g_dasm_str, "ror.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_ror_r_32(void)
 {
-	sprintf(g_dasm_str, "ror.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROR, 4);
+	//sprintf(g_dasm_str, "ror.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_ror_ea(void)
@@ -2842,17 +2881,20 @@ static void d68000_rol_s_32(void)
 
 static void d68000_rol_r_8(void)
 {
-	sprintf(g_dasm_str, "rol.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROL, 1);
+	//sprintf(g_dasm_str, "rol.b   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_rol_r_16(void)
 {
-	sprintf(g_dasm_str, "rol.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROL, 2);
+	//sprintf(g_dasm_str, "rol.w   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_rol_r_32(void)
 {
-	sprintf(g_dasm_str, "rol.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROL, 4);
+	//sprintf(g_dasm_str, "rol.l   D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_rol_ea(void)
