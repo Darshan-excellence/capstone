@@ -786,9 +786,9 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			op->address_mode = M68K_IMMIDATE;
 
-			if (size == 0)
+			if (size == 1)
 				op->imm = read_imm_8() & 0xff;
-			else if(size == 1)
+			else if(size == 2)
 				op->imm = read_imm_16() & 0xffff;
 			else
 				op->imm = read_imm_32() & 0xffffffff;
@@ -895,10 +895,10 @@ static void build_er_gen_1(bool isDreg, int opcode, uint8_t size)
 
 	if (isDreg) {
 		op1->address_mode = M68K_RD_DATA;
-		op1->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+		op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
 	} else {
 		op1->address_mode = M68K_RD_ADDRESS;
-		op1->reg = M68K_REG_A0 + (g_cpu_ir >> 9 ) & 7;
+		op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
 	}
 }
 
@@ -929,6 +929,24 @@ static void build_rr(int opcode, uint8_t size, int imm)
 		op2->address_mode = M68K_IMMIDATE;
 		op2->imm = imm;
 	}
+}
+
+static void build_imm_ea(int opcode, uint8_t size, int imm)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	op0->address_mode = M68K_IMMIDATE;
+	op0->imm = imm; 
+
+	get_ea_mode_op(op1, g_cpu_ir, size);
 }
 
 static void build_mm(int opcode, uint8_t size, int imm)
@@ -1050,20 +1068,22 @@ static void d68000_adda_32(void)
 
 static void d68000_addi_8(void)
 {
-	char* str = get_imm_str_s8();
-	sprintf(g_dasm_str, "addi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ADDI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "addi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_addi_16(void)
 {
-	char* str = get_imm_str_s16();
-	sprintf(g_dasm_str, "addi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ADDI, 2, read_imm_16());
+	//char* str = get_imm_str_s16();
+	//sprintf(g_dasm_str, "addi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_addi_32(void)
 {
-	char* str = get_imm_str_s32();
-	sprintf(g_dasm_str, "addi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INSN_ADDI, 4, read_imm_32());
+	//char* str = get_imm_str_s32();
+	//sprintf(g_dasm_str, "addi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_addq_8(void)
@@ -3008,20 +3028,20 @@ static void d68000_suba_32(void)
 
 static void d68000_subi_8(void)
 {
-	char* str = get_imm_str_s8();
-	sprintf(g_dasm_str, "subi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_SUBI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "subi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_subi_16(void)
 {
-	char* str = get_imm_str_s16();
-	sprintf(g_dasm_str, "subi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INSN_SUBI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "subi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_subi_32(void)
 {
-	char* str = get_imm_str_s32();
-	sprintf(g_dasm_str, "subi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INSN_SUBI, 4, read_imm_32());
+	//sprintf(g_dasm_str, "subi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_subq_8(void)
