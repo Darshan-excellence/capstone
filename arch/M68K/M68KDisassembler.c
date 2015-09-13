@@ -106,6 +106,29 @@ static const char* s_reg_names[] =
 	"sr", "pc",
 };
 
+static const char* s_instruction_names[] = {
+	"invalid",
+	"abcd", "add", "adda", "addi", "addq", "addx", "and", "andi", "asl", "asr", "bhs", "blo", "bhi", "bls", "bcc", "bcs", "bne", "beq", "bvc",
+	"bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble", "bra", "bsr", "bchg", "bclr", "bset", "btst", "bfchg", "bfclr", "bfexts", "bfextu", "bfffo", "bfins",
+	"bfset", "bftst", "bkpt", "cas", "cas2", "chk", "chk2", "clr", "cmp", "cmpa", "cmpi", "cmpm", "cmp2", "cinvl", "cinvp", "cinva", "cpushl", "cpushp",
+	"cpusha", "divs", "divsl", "divu", "divul", "eor", "eori", "exg", "ext", "extb", "fabs", "fsabs", "fdabs", "facos", "fadd", "fsadd", "fdadd", "fasin",
+	"fatan", "fatanh", "fbf", "fbeq", "fbogt", "fboge", "fbolt", "fbole", "fbogl", "fbor", "fbun", "fbueq", "fbugt", "fbuge", "fbult", "fbule", "fbne", "fbt",
+	"fbsf", "fbseq", "fbgt", "fbge", "fblt", "fble", "fbgl", "fbgle", "fbngle", "fbngl", "fbnle", "fbnlt", "fbnge", "fbngt", "fbsne", "fbst", "fcmp", "fcos",
+	"fcosh", "fdbf", "fdbeq", "fdbogt", "fdboge", "fdbolt", "fdbole", "fdbogl", "fdbor", "fdbun", "fdbueq", "fdbugt", "fdbuge", "fdbult", "fdbule", "fdbne",
+	"fdbt", "fdbsf", "fdbseq", "fdbgt", "fdbge", "fdblt", "fdble", "fdbgl", "fdbgle", "fdbngle", "fdbngl", "fdbnle", "fdbnlt", "fdbnge", "fdbngt", "fdbsne",
+	"fdbst", "fdiv", "fsdiv", "fddiv", "fetox", "fetoxm1", "fgetexp", "fgetman", "fint", "fintrz", "flog10", "flog2", "flogn", "flognp1", "fmod", "fmove",
+	"fsmove", "fdmove", "fmovecr", "fmovem", "fmul", "fsmul", "fdmul", "fneg", "fsneg", "fdneg", "fnop", "frem", "fscale", "fsgldiv", "fsglmul", "fsin",
+	"fsincos", "fsinh", "fsqrt", "fssqrt", "fdsqrt", "fsub", "fssub", "fdsub", "ftan", "ftanh", "ftentox", "ftrapf", "ftrapeq", "ftrapogt", "ftrapoge",
+	"ftrapolt", "ftrapole", "ftrapogl", "ftrapor", "ftrapun", "ftrapueq", "ftrapugt", "ftrapuge", "ftrapult", "ftrapule", "ftrapne", "ftrapt", "ftrapsf",
+	"ftrapseq", "ftrapgt", "ftrapge", "ftraplt", "ftraple", "ftrapgl", "ftrapgle", "ftrapngle", "ftrapngl", "ftrapnle", "ftrapnlt", "ftrapnge", "ftrapngt",
+	"ftrapsne", "ftrapst", "ftst", "ftwotox", "halt", "illegal", "jmp", "jsr", "lea", "link", "lpstop", "lsl", "lsr", "move", "movea", "movec", "movem",
+	"movep", "moveq", "moves", "move16", "muls", "mulu", "nbcd", "neg", "negx", "nop", "not", "or", "ori", "pack", "pea", "pflush", "pflusha", "pflushan",
+	"pflushn", "ploadr", "ploadw", "plpar", "plpaw", "pmove", "pmovefd", "ptestr", "ptestw", "pulse", "rems", "remu", "reset", "rol", "ror", "roxl",
+	"roxr", "rtd", "rte", "rtm", "rtr", "rts", "sbcd", "st", "sf", "shi", "sls", "scc", "shs", "scs", "slo", "sne", "seq", "svc", "svs", "spl", "smi",
+	"sge", "slt", "sgt", "sle", "stop", "sub", "suba", "subi", "subq", "subx", "swap", "tas", "trap", "trapv", "trapt", "trapf", "traphi", "trapls",
+	"trapcc", "traphs", "trapcs", "traplo", "trapne", "trapeq", "trapvc", "trapvs", "trappl", "trapmi", "trapge", "traplt", "trapgt", "traple", "tst", "unlk", "unpk",
+};
+
 void M68K_init(MCRegisterInfo *MRI)
 {
 	MCRegisterInfo_InitMCRegisterInfo(MRI, M68KRegDesc, 17,
@@ -249,16 +272,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	cs_m68k* info = &MI->flat_insn->detail->m68k;
 
-	switch (MI->Opcode)
-	{
-		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
-		case M68K_INSN_OR : SStream_concat0(O, "or"); break;
-		case M68K_INSN_AND : SStream_concat0(O, "and"); break;
-		case M68K_INSN_EOR : SStream_concat0(O, "eor"); break;
-		case M68K_INSN_BSET : SStream_concat0(O, "bset"); break;
-		case M68K_INSN_SUB : SStream_concat0(O, "sub"); break;
-		case M68K_INSN_ADD : SStream_concat0(O, "add"); break;
-	}
+	SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
 
 	switch (info->op_size)
 	{
@@ -313,14 +327,7 @@ void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
 
 const char* M68K_insn_name(csh handle, unsigned int id)
 {
-	switch (id)
-	{
-		case M68K_INSN_NOP : return "nop";
-		case M68K_INSN_OR : return "or";
-		case M68K_INSN_AND : return "and";
-	}
-
-	return 0;
+	return s_instruction_names[id];
 }
 
 const char* M68K_group_name(csh handle, unsigned int id)
