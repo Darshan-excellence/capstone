@@ -98,6 +98,13 @@ static MCRegisterClass M68KMCRegisterClasses[] = {
   { ARRegs, ARRegsBits, 0, 32, sizeof(ARRegsBits), M68K_ARRegsRegClassID, 4, 4, 1, 1 },
 };
 
+static const char* s_reg_names[] =
+{
+	"invalid",
+	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+	"sr", "pc",
+};
 
 void M68K_init(MCRegisterInfo *MRI)
 {
@@ -143,6 +150,11 @@ unsigned int m68k_read_disassembler_32(uint64_t address)
 	return (v0 << 24) | (v1 << 16) | (v2 << 8) | v3;
 }
 
+const char* getRegName(m68k_reg reg)
+{
+	return s_reg_names[(int)reg];
+}
+
 void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
 	printf("mode %d\n", op->address_mode);
@@ -155,32 +167,31 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		case M68K_RI_ADDRESS_PI : SStream_concat(O, "(a%d)+", (op->reg - M68K_REG_A0)); break;
 		case M68K_RI_ADDRESS_PD : SStream_concat(O, "-(a%d)", (op->reg - M68K_REG_A0)); break;
 		case M68K_RI_ADDRESS_D : SStream_concat(O, "$%x(a%d)", op->mem.disp, (op->reg - M68K_REG_A0)); break;
+		case M68K_PCI_DISP : SStream_concat(O, "$%x(pc)", op->mem.disp); break;
+		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
+		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
+		case M68K_IMMIDATE : SStream_concat(O, "#$%x", op->imm); break; 
+		case M68K_PCIIWI_8_BIT : 
+		{
+			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 
+			break;
+		}
 
 		case M68K_PCIIWI_BASE : 
 		case M68K_ARIWI_BASE : 
 		{
-			char index_reg_type = 'a';
-			int index_reg_num = 0; 
-
-			if (op->mem.index_reg >= M68K_REG_D0 && op->mem.index_reg <= M68K_REG_D7) {
-				index_reg_num = op->mem.index_reg - M68K_REG_D0; 
-				index_reg_type = 'd';
-			} else {
-				index_reg_num = op->mem.index_reg - M68K_REG_A0; 
-			}
+			if (op->mem.in_disp > 0)
+				SStream_concat(O, "$%x", op->mem.in_disp);
 
 			SStream_concat(O, "(");
 
-			if (op->mem.in_disp > 0)
-				SStream_concat(O, "$%x,", op->mem.in_disp);
-
 			if (op->address_mode == M68K_PCIIWI_BASE) {
-				SStream_concat(O, "pc,%c%d.%c", index_reg_type, index_reg_num, op->mem.index_size ? 'l' : 'w');
+				SStream_concat(O, "pc,%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 			} else { 
 				if (op->mem.base_reg != M68K_REG_INVALID)
 					SStream_concat(O, "a%d,", op->mem.base_reg - M68K_REG_A0);
 
-				SStream_concat(O, "%c%d.%c", index_reg_type, index_reg_num, op->mem.index_size ? 'l' : 'w');
+				SStream_concat(O, "%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 			}
 
 			if (op->mem.scale > 0)
@@ -189,6 +200,44 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 				SStream_concat(O, ")", op->mem.scale);
 
 			break;
+		}
+
+		// It's ok to just use PCMI here as is as we set base_reg to PC in the disassembler. While this is not strictly correct it makes the code
+		// easier and that is what actually happens when the code is executed anyway.
+
+		case M68K_PCMI_PI:
+		case M68K_PCMI_PE:
+		case M68K_MI_PE:
+		case M68K_MI_PI:
+		{
+			SStream_concat(O, "([");
+
+			if (op->mem.in_disp > 0)
+				SStream_concat(O, "$%x", op->mem.in_disp);
+
+			if (op->mem.base_reg != M68K_REG_INVALID) {
+				if (op->mem.in_disp > 0)
+					SStream_concat(O, ",%s", getRegName(op->mem.base_reg)); 
+				else
+					SStream_concat(O, "%s", getRegName(op->mem.base_reg)); 
+			}
+
+			if (op->address_mode == M68K_MI_PI || op->address_mode == M68K_PCMI_PI)
+				SStream_concat(O, "]");
+
+			if (op->mem.index_reg != M68K_REG_INVALID)
+				SStream_concat(O, ",%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
+
+			if (op->mem.scale > 0)
+				SStream_concat(O, "*%d", op->mem.scale);
+
+			if (op->address_mode == M68K_MI_PE || op->address_mode == M68K_PCMI_PE)
+				SStream_concat(O, "]");
+
+			if (op->mem.out_disp > 0)
+				SStream_concat(O, ",$%x", op->mem.out_disp);
+
+			SStream_concat(O, ")");
 		}
 
 		default:
@@ -253,7 +302,7 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 
 const char* M68K_reg_name(csh handle, unsigned int reg)
 {
-	return 0;
+	return s_reg_names[(int)reg];
 }
 
 void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)

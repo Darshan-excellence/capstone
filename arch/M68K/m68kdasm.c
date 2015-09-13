@@ -613,7 +613,7 @@ static void get_with_index_address_mode(cs_m68k_op* op, uint instruction, uint s
 			if (is_pc) {
 				op->mem.base_reg = M68K_REG_PC;
 			} else {
-				op->mem.base_reg = M68K_REG_A0 + instruction & 7;
+				op->mem.base_reg = M68K_REG_A0 + (instruction & 7);
 			}
 		}
 
@@ -815,7 +815,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		{
 			/* program counter with displacement */
 			op->address_mode = M68K_PCI_DISP;
-			op->imm = read_imm_16();
+			op->mem.disp = read_imm_16();
 			break;
 		}
 
