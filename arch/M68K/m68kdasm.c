@@ -844,7 +844,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 
 // example "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 
-static void build_re_1(int opcode, uint8_t size)
+static void build_re_gen_1(bool isDreg, int opcode, uint8_t size)
 {
 	MCInst_setOpcode(g_inst, opcode);
 
@@ -856,18 +856,30 @@ static void build_re_1(int opcode, uint8_t size)
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
 	
-	op0->address_mode = M68K_RD_DATA;
-	op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+	if (isDreg) {
+		op0->address_mode = M68K_RD_DATA;
+		op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+	} else {
+		op0->address_mode = M68K_RD_ADDRESS;
+		op0->reg = M68K_REG_A0 + (g_cpu_ir >> 9 ) & 7;
+	}
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
-
-	/*
-	MCInst_setOpcode(g_inst, M68K_INSN_OR);
-	sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
-	*/
 }
 
-static void build_er_1(int opcode, uint8_t size)
+static void build_re_1(int opcode, uint8_t size)
+{
+	build_re_gen_1(true, opcode, size);
+}
+
+static void build_re_a_1(int opcode, uint8_t size)
+{
+	build_re_gen_1(false, opcode, size);
+}
+
+// example "or.w    %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+
+static void build_er_gen_1(bool isDreg, int opcode, uint8_t size)
 {
 	MCInst_setOpcode(g_inst, opcode);
 
@@ -881,14 +893,23 @@ static void build_er_1(int opcode, uint8_t size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
-	op1->address_mode = M68K_RD_DATA;
-	op1->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+	if (isDreg) {
+		op1->address_mode = M68K_RD_DATA;
+		op1->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+	} else {
+		op1->address_mode = M68K_RD_ADDRESS;
+		op1->reg = M68K_REG_A0 + (g_cpu_ir >> 9 ) & 7;
+	}
+}
 
+static void build_er_1(int opcode, uint8_t size)
+{
+	build_er_gen_1(true, opcode, size);
+}
 
-	/*
-	MCInst_setOpcode(g_inst, M68K_INSN_OR);
-	sprintf(g_dasm_str, "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
-	*/
+static void build_er_a_1(int opcode, uint8_t size)
+{
+	build_er_gen_1(false, opcode, size);
 }
 
 
@@ -922,33 +943,38 @@ static void d68000_abcd_mm(void)
 
 static void d68000_add_er_8(void)
 {
-	sprintf(g_dasm_str, "add.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_ADD, 1);
+	//sprintf(g_dasm_str, "add.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
-
 
 static void d68000_add_er_16(void)
 {
-	sprintf(g_dasm_str, "add.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_ADD, 2);
+	//sprintf(g_dasm_str, "add.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_add_er_32(void)
 {
-	sprintf(g_dasm_str, "add.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_ADD, 4);
+	//sprintf(g_dasm_str, "add.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_add_re_8(void)
 {
-	sprintf(g_dasm_str, "add.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_ADD, 1);
+	//sprintf(g_dasm_str, "add.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_add_re_16(void)
 {
-	sprintf(g_dasm_str, "add.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	build_re_1(M68K_INSN_ADD, 2);
+	//sprintf(g_dasm_str, "add.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_add_re_32(void)
 {
-	sprintf(g_dasm_str, "add.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
+	build_re_1(M68K_INSN_ADD, 4);
+	//sprintf(g_dasm_str, "add.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_adda_16(void)
@@ -1394,7 +1420,8 @@ static void d68020_bra_32(void)
 
 static void d68000_bset_r(void)
 {
-	sprintf(g_dasm_str, "bset    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_BSET, 1);
+	//sprintf(g_dasm_str, "bset    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bset_s(void)
@@ -1820,18 +1847,20 @@ static void d68020_divl(void)
 
 static void d68000_eor_8(void)
 {
-	sprintf(g_dasm_str, "eor.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_EOR, 1); 
+	//sprintf(g_dasm_str, "eor.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_eor_16(void)
 {
-
-	sprintf(g_dasm_str, "eor.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	build_re_1(M68K_INSN_EOR, 2); 
+	//sprintf(g_dasm_str, "eor.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_eor_32(void)
 {
-	sprintf(g_dasm_str, "eor.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
+	build_re_1(M68K_INSN_EOR, 4); 
+	//sprintf(g_dasm_str, "eor.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_eori_8(void)
@@ -2862,32 +2891,38 @@ static void d68000_stop(void)
 
 static void d68000_sub_er_8(void)
 {
-	sprintf(g_dasm_str, "sub.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_SUB, 1);
+	//sprintf(g_dasm_str, "sub.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_sub_er_16(void)
 {
-	sprintf(g_dasm_str, "sub.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_SUB, 2);
+	//sprintf(g_dasm_str, "sub.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_sub_er_32(void)
 {
-	sprintf(g_dasm_str, "sub.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INSN_SUB, 4);
+	//sprintf(g_dasm_str, "sub.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_sub_re_8(void)
 {
-	sprintf(g_dasm_str, "sub.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_SUB, 1);
+	//sprintf(g_dasm_str, "sub.b   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_sub_re_16(void)
 {
-	sprintf(g_dasm_str, "sub.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
+	build_re_1(M68K_INSN_SUB, 2);
+	//sprintf(g_dasm_str, "sub.w   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_sub_re_32(void)
 {
-	sprintf(g_dasm_str, "sub.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
+	build_re_1(M68K_INSN_SUB, 4);
+	//sprintf(g_dasm_str, "sub.l   D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_suba_16(void)

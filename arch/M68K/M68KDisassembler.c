@@ -254,6 +254,10 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 		case M68K_INSN_NOP : SStream_concat0(O, "nop"); break;
 		case M68K_INSN_OR : SStream_concat0(O, "or"); break;
 		case M68K_INSN_AND : SStream_concat0(O, "and"); break;
+		case M68K_INSN_EOR : SStream_concat0(O, "eor"); break;
+		case M68K_INSN_BSET : SStream_concat0(O, "bset"); break;
+		case M68K_INSN_SUB : SStream_concat0(O, "sub"); break;
+		case M68K_INSN_ADD : SStream_concat0(O, "add"); break;
 	}
 
 	switch (info->op_size)
