@@ -1481,30 +1481,43 @@ static void d68020_bcc_32(void)
 
 static void d68000_bchg_r(void)
 {
-	sprintf(g_dasm_str, "bchg    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_BCHG, 1);
+	//sprintf(g_dasm_str, "bchg    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bchg_s(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "bchg    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_BCHG, 1, read_imm_8());
+	//sprintf(g_dasm_str, "bchg    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bclr_r(void)
 {
-	sprintf(g_dasm_str, "bclr    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_BCLR, 1);
+	//sprintf(g_dasm_str, "bclr    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bclr_s(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "bclr    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_BCLR, 1, read_imm_8());
+	//sprintf(g_dasm_str, "bclr    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68010_bkpt(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	sprintf(g_dasm_str, "bkpt #%d; (1+)", g_cpu_ir&7);
+	
+	MCInst_setOpcode(g_inst, M68K_INSN_BKPT);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 1;
+	info->op_size = 0; 
+
+	cs_m68k_op* op = &info->operands[0];
+
+	op->address_mode = M68K_IMMIDATE;
+	op->imm = g_cpu_ir & 7;
 }
 
 static void d68020_bfchg(void)
@@ -1702,8 +1715,8 @@ static void d68000_bset_r(void)
 
 static void d68000_bset_s(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "bset    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_BSET, 1, read_imm_8());
+	//sprintf(g_dasm_str, "bset    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bsr_8(void)
@@ -1727,13 +1740,14 @@ static void d68020_bsr_32(void)
 
 static void d68000_btst_r(void)
 {
-	sprintf(g_dasm_str, "btst    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_re_1(M68K_INSN_BTST, 1);
+	//sprintf(g_dasm_str, "btst    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_btst_s(void)
 {
-	char* str = get_imm_str_u8();
-	sprintf(g_dasm_str, "btst    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INSN_BTST, 1, read_imm_8());
+	//sprintf(g_dasm_str, "btst    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_callm(void)
