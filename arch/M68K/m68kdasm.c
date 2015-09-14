@@ -898,7 +898,7 @@ static void build_er_gen_1(bool isDreg, int opcode, uint8_t size)
 		op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
 	} else {
 		op1->address_mode = M68K_RD_ADDRESS;
-		op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7;
+		op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
 	}
 }
 
@@ -942,7 +942,6 @@ static void build_r(int opcode, uint8_t size)
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
-	cs_m68k_op* op2 = &info->operands[2];
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
@@ -970,6 +969,48 @@ static void build_imm_ea(int opcode, uint8_t size, int imm)
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
 }
+
+static void build_3bit_d(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op0->address_mode = M68K_IMMIDATE;
+	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
+
+	op1->address_mode = M68K_RD_DATA;
+	op1->reg = M68K_REG_D0 + (g_cpu_ir & 7);
+}
+
+static void build_3bit_ea(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op0->address_mode = M68K_IMMIDATE;
+	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
+
+	get_ea_mode_op(op1, g_cpu_ir, size);
+}
+
 
 static void build_mm(int opcode, uint8_t size, int imm)
 {
@@ -1110,17 +1151,20 @@ static void d68000_addi_32(void)
 
 static void d68000_addq_8(void)
 {
-	sprintf(g_dasm_str, "addq.b  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_8(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_ADDQ, 1);
+	//sprintf(g_dasm_str, "addq.b  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_addq_16(void)
 {
-	sprintf(g_dasm_str, "addq.w  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_16(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_ADDQ, 2);
+	//sprintf(g_dasm_str, "addq.w  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_addq_32(void)
 {
-	sprintf(g_dasm_str, "addq.l  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_32(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_ADDQ, 4);
+	//sprintf(g_dasm_str, "addq.l  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_addx_rr_8(void)
@@ -1225,17 +1269,20 @@ static void d68000_andi_to_sr(void)
 
 static void d68000_asr_s_8(void)
 {
-	sprintf(g_dasm_str, "asr.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASR, 1);
+	//sprintf(g_dasm_str, "asr.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asr_s_16(void)
 {
-	sprintf(g_dasm_str, "asr.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASR, 2);
+	//sprintf(g_dasm_str, "asr.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asr_s_32(void)
 {
-	sprintf(g_dasm_str, "asr.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASR, 4);
+	//sprintf(g_dasm_str, "asr.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asr_r_8(void)
@@ -1263,17 +1310,20 @@ static void d68000_asr_ea(void)
 
 static void d68000_asl_s_8(void)
 {
-	sprintf(g_dasm_str, "asl.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASL, 1);
+	//sprintf(g_dasm_str, "asl.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asl_s_16(void)
 {
-	sprintf(g_dasm_str, "asl.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASL, 2);
+	//sprintf(g_dasm_str, "asl.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asl_s_32(void)
 {
-	sprintf(g_dasm_str, "asl.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ASL, 4);
+	//sprintf(g_dasm_str, "asl.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_asl_r_8(void)
@@ -2067,17 +2117,20 @@ static void d68020_link_32(void)
 
 static void d68000_lsr_s_8(void)
 {
-	sprintf(g_dasm_str, "lsr.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSR, 1);
+	//sprintf(g_dasm_str, "lsr.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsr_s_16(void)
 {
-	sprintf(g_dasm_str, "lsr.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSR, 2);
+	//sprintf(g_dasm_str, "lsr.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsr_s_32(void)
 {
-	sprintf(g_dasm_str, "lsr.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSR, 4);
+	//sprintf(g_dasm_str, "lsr.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsr_r_8(void)
@@ -2105,17 +2158,20 @@ static void d68000_lsr_ea(void)
 
 static void d68000_lsl_s_8(void)
 {
-	sprintf(g_dasm_str, "lsl.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSL, 1);
+	//sprintf(g_dasm_str, "lsl.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsl_s_16(void)
 {
-	sprintf(g_dasm_str, "lsl.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSL, 2);
+	//sprintf(g_dasm_str, "lsl.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsl_s_32(void)
 {
-	sprintf(g_dasm_str, "lsl.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_LSL, 4);
+	//sprintf(g_dasm_str, "lsl.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_lsl_r_8(void)
@@ -2828,17 +2884,20 @@ static void d68000_reset(void)
 
 static void d68000_ror_s_8(void)
 {
-	sprintf(g_dasm_str, "ror.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROR, 1);
+	//sprintf(g_dasm_str, "ror.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_ror_s_16(void)
 {
-	sprintf(g_dasm_str, "ror.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7],g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROR, 2);
+	//sprintf(g_dasm_str, "ror.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7],g_cpu_ir&7);
 }
 
 static void d68000_ror_s_32(void)
 {
-	sprintf(g_dasm_str, "ror.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROR, 4);
+	//sprintf(g_dasm_str, "ror.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_ror_r_8(void)
@@ -2866,17 +2925,20 @@ static void d68000_ror_ea(void)
 
 static void d68000_rol_s_8(void)
 {
-	sprintf(g_dasm_str, "rol.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROL, 1);
+	//sprintf(g_dasm_str, "rol.b   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_rol_s_16(void)
 {
-	sprintf(g_dasm_str, "rol.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROL, 2);
+	//sprintf(g_dasm_str, "rol.w   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_rol_s_32(void)
 {
-	sprintf(g_dasm_str, "rol.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROL, 4);
+	//sprintf(g_dasm_str, "rol.l   #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_rol_r_8(void)
@@ -2904,33 +2966,39 @@ static void d68000_rol_ea(void)
 
 static void d68000_roxr_s_8(void)
 {
-	sprintf(g_dasm_str, "roxr.b  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXR, 1);
+	//sprintf(g_dasm_str, "roxr.b  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_roxr_s_16(void)
 {
-	sprintf(g_dasm_str, "roxr.w  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXR, 2);
+	//sprintf(g_dasm_str, "roxr.w  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 
 static void d68000_roxr_s_32(void)
 {
-	sprintf(g_dasm_str, "roxr.l  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXR, 4);
+	//sprintf(g_dasm_str, "roxr.l  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_roxr_r_8(void)
 {
-	sprintf(g_dasm_str, "roxr.b  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXR, 4);
+	//sprintf(g_dasm_str, "roxr.b  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxr_r_16(void)
 {
-	sprintf(g_dasm_str, "roxr.w  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROXR, 2);
+	//sprintf(g_dasm_str, "roxr.w  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxr_r_32(void)
 {
-	sprintf(g_dasm_str, "roxr.l  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROXR, 4);
+	//sprintf(g_dasm_str, "roxr.l  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxr_ea(void)
@@ -2940,32 +3008,38 @@ static void d68000_roxr_ea(void)
 
 static void d68000_roxl_s_8(void)
 {
-	sprintf(g_dasm_str, "roxl.b  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXL, 1);
+	//sprintf(g_dasm_str, "roxl.b  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_roxl_s_16(void)
 {
-	sprintf(g_dasm_str, "roxl.w  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXL, 2);
+	//sprintf(g_dasm_str, "roxl.w  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_roxl_s_32(void)
 {
-	sprintf(g_dasm_str, "roxl.l  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
+	build_3bit_d(M68K_INSN_ROXL, 4);
+	//sprintf(g_dasm_str, "roxl.l  #%d, D%d", g_3bit_qdata_table[(g_cpu_ir>>9)&7], g_cpu_ir&7);
 }
 
 static void d68000_roxl_r_8(void)
 {
-	sprintf(g_dasm_str, "roxl.b  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROXL, 1);
+	//sprintf(g_dasm_str, "roxl.b  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxl_r_16(void)
 {
-	sprintf(g_dasm_str, "roxl.w  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROXL, 2);
+	//sprintf(g_dasm_str, "roxl.w  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxl_r_32(void)
 {
-	sprintf(g_dasm_str, "roxl.l  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	build_r(M68K_INSN_ROXL, 4);
+	//sprintf(g_dasm_str, "roxl.l  D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_roxl_ea(void)
@@ -3088,17 +3162,20 @@ static void d68000_subi_32(void)
 
 static void d68000_subq_8(void)
 {
-	sprintf(g_dasm_str, "subq.b  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_8(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_SUBQ, 1);
+	//sprintf(g_dasm_str, "subq.b  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_subq_16(void)
 {
-	sprintf(g_dasm_str, "subq.w  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_16(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_SUBQ, 2);
+	//sprintf(g_dasm_str, "subq.w  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_subq_32(void)
 {
-	sprintf(g_dasm_str, "subq.l  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_32(g_cpu_ir));
+	build_3bit_ea(M68K_INSN_SUBQ, 4);
+	//sprintf(g_dasm_str, "subq.l  #%d, %s", g_3bit_qdata_table[(g_cpu_ir>>9)&7], get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_subx_rr_8(void)
