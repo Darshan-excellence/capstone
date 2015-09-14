@@ -305,7 +305,7 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 
 	printf("getInstruction: %d %p\n", (int)address, s_disassemblyBuffer);
 
-	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
+	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68040);
 
 	if (s == 0)
 		return false;
