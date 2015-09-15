@@ -191,7 +191,7 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		case M68K_PCI_DISP : SStream_concat(O, "$%x(pc)", op->mem.disp); break;
 		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
 		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
-		case M68K_IMMIDATE : SStream_concat(O, "#$%x", op->imm); break; 
+		case M68K_IMMIDIATE : SStream_concat(O, "#$%x", op->imm); break; 
 		case M68K_PCIIWI_8_BIT : 
 		{
 			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 

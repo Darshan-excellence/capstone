@@ -233,9 +233,7 @@ static m68k_insn s_branch_lut[] = {
 	M68K_INS_BLT,
 	M68K_INS_BGT,
 	M68K_INS_BLE,
-	M68K_INS_INVALID, 
-}
-
+};
 
 static char* g_cpcc[64] =
 {/* 000    001    010    011    100    101    110    111 */
@@ -1141,8 +1139,8 @@ static void build_bcc(int size, int jump_offset)
 
 	cs_m68k_op* op = &info->operands[0];
 	
-	op0->address_mode = M68K_IMMIDIATE;
-	op0->imm = jump_offset; 
+	op->address_mode = M68K_IMMIDIATE;
+	op->imm = jump_offset; 
 }
 
 static void build_er_1(int opcode, uint8_t size)
@@ -1460,7 +1458,7 @@ static void d68000_asl_ea(void)
 static void d68000_bcc_8(void)
 {
 	uint temp_pc = g_cpu_pc;
-	build_bcc(1, temp_pc + make_int_8(g_cpu_ir))
+	build_bcc(1, temp_pc + make_int_8(g_cpu_ir));
 	//sprintf(g_dasm_str, "b%-2s     %x", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + make_int_8(g_cpu_ir));
 }
 
@@ -1481,25 +1479,25 @@ static void d68020_bcc_32(void)
 
 static void d68000_bchg_r(void)
 {
-	build_re_1(M68K_INSN_BCHG, 1);
+	build_re_1(M68K_INS_BCHG, 1);
 	//sprintf(g_dasm_str, "bchg    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bchg_s(void)
 {
-	build_imm_ea(M68K_INSN_BCHG, 1, read_imm_8());
+	build_imm_ea(M68K_INS_BCHG, 1, read_imm_8());
 	//sprintf(g_dasm_str, "bchg    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bclr_r(void)
 {
-	build_re_1(M68K_INSN_BCLR, 1);
+	build_re_1(M68K_INS_BCLR, 1);
 	//sprintf(g_dasm_str, "bclr    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_bclr_s(void)
 {
-	build_imm_ea(M68K_INSN_BCLR, 1, read_imm_8());
+	build_imm_ea(M68K_INS_BCLR, 1, read_imm_8());
 	//sprintf(g_dasm_str, "bclr    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
@@ -1507,7 +1505,7 @@ static void d68010_bkpt(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
 	
-	MCInst_setOpcode(g_inst, M68K_INSN_BKPT);
+	MCInst_setOpcode(g_inst, M68K_INS_BKPT);
 
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
@@ -1515,8 +1513,7 @@ static void d68010_bkpt(void)
 	info->op_size = 0; 
 
 	cs_m68k_op* op = &info->operands[0];
-
-	op->address_mode = M68K_IMMIDATE;
+	op->address_mode = M68K_IMMIDIATE;
 	op->imm = g_cpu_ir & 7;
 }
 
@@ -1715,7 +1712,7 @@ static void d68000_bset_r(void)
 
 static void d68000_bset_s(void)
 {
-	build_imm_ea(M68K_INSN_BSET, 1, read_imm_8());
+	build_imm_ea(M68K_INS_BSET, 1, read_imm_8());
 	//sprintf(g_dasm_str, "bset    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
@@ -1740,13 +1737,13 @@ static void d68020_bsr_32(void)
 
 static void d68000_btst_r(void)
 {
-	build_re_1(M68K_INSN_BTST, 1);
+	build_re_1(M68K_INS_BTST, 1);
 	//sprintf(g_dasm_str, "btst    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_btst_s(void)
 {
-	build_imm_ea(M68K_INSN_BTST, 1, read_imm_8());
+	build_imm_ea(M68K_INS_BTST, 1, read_imm_8());
 	//sprintf(g_dasm_str, "btst    %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
@@ -1886,19 +1883,19 @@ static void d68000_clr_32(void)
 
 static void d68000_cmp_8(void)
 {
-	build_re(M68K_INS_CMP, 1);
+	build_re_1(M68K_INS_CMP, 1);
 	//sprintf(g_dasm_str, "cmp.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmp_16(void)
 {
-	build_re(M68K_INS_CMP, 2);
+	build_re_1(M68K_INS_CMP, 2);
 	//sprintf(g_dasm_str, "cmp.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmp_32(void)
 {
-	build_re(M68K_INS_CMP, 4);
+	build_re_1(M68K_INS_CMP, 4);
 	//sprintf(g_dasm_str, "cmp.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
