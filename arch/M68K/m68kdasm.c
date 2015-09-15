@@ -214,8 +214,28 @@ static uint g_5bit_data_table[32] =
 	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 };
 
-static char* g_cc[16] =
-{"t", "f", "hi", "ls", "cc", "cs", "ne", "eq", "vc", "vs", "pl", "mi", "ge", "lt", "gt", "le"};
+static char* g_cc[16] = { "t", "f", "hi", "ls", "cc", "cs", "ne", "eq", "vc", "vs", "pl", "mi", "ge", "lt", "gt", "le" };
+
+static m68k_insn s_branch_lut[] = {
+	M68K_INS_INVALID,
+	M68K_INS_INVALID,
+	M68K_INS_BHI,
+	M68K_INS_BLS,
+	M68K_INS_BCC,
+	M68K_INS_BCS,
+	M68K_INS_BNE,
+	M68K_INS_BEQ,
+	M68K_INS_BVC,
+	M68K_INS_BVS,
+	M68K_INS_BPL,
+	M68K_INS_BMI,
+	M68K_INS_BGE,
+	M68K_INS_BLT,
+	M68K_INS_BGT,
+	M68K_INS_BLE,
+	M68K_INS_INVALID, 
+}
+
 
 static char* g_cpcc[64] =
 {/* 000    001    010    011    100    101    110    111 */
@@ -1091,7 +1111,7 @@ static void build_pi_pi(int opcode, int size)
 	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
 }
 
-static build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
+static void build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
 {
 	MCInst_setOpcode(g_inst, opcode);
 
@@ -1110,6 +1130,20 @@ static build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
 	op1->reg = reg; 
 }
 
+static void build_bcc(int size, int jump_offset)
+{
+	MCInst_setOpcode(g_inst, s_branch_lut[(g_cpu_ir >> 8) & 0xf]);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 1;
+	info->op_size = size; 
+
+	cs_m68k_op* op = &info->operands[0];
+	
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->imm = jump_offset; 
+}
 
 static void build_er_1(int opcode, uint8_t size)
 {
@@ -1426,20 +1460,23 @@ static void d68000_asl_ea(void)
 static void d68000_bcc_8(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "b%-2s     %x", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + make_int_8(g_cpu_ir));
+	build_bcc(1, temp_pc + make_int_8(g_cpu_ir))
+	//sprintf(g_dasm_str, "b%-2s     %x", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + make_int_8(g_cpu_ir));
 }
 
 static void d68000_bcc_16(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "b%-2s     %x", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + make_int_16(read_imm_16()));
+	build_bcc(2, temp_pc + make_int_16(read_imm_16()));
+	//sprintf(g_dasm_str, "b%-2s     %x", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + make_int_16(read_imm_16()));
 }
 
 static void d68020_bcc_32(void)
 {
 	uint temp_pc = g_cpu_pc;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "b%-2s     %x; (2+)", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + read_imm_32());
+	build_bcc(4, temp_pc + read_imm_32());
+	//sprintf(g_dasm_str, "b%-2s     %x; (2+)", g_cc[(g_cpu_ir>>8)&0xf], temp_pc + read_imm_32());
 }
 
 static void d68000_bchg_r(void)
