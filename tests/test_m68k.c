@@ -75,23 +75,71 @@ static void print_insn_detail(cs_insn *ins)
 	printf("\n");
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void* loadToMemory(const char* filename, size_t* size)  
+{
+    FILE* f = fopen(filename, "rb");
+    void* data = 0;
+    size_t s = 0, t = 0;
+
+    *size = 0;
+
+    if (!f)
+        return 0;
+
+    fseek(f, 0, SEEK_END);
+    long ts = ftell(f);
+
+    if (ts < 0)
+    	goto end;
+
+    s = (size_t)ts;
+
+    data = malloc(s);
+
+    if (!data)
+    	goto end;
+
+    fseek(f, 0, SEEK_SET);
+
+    t = fread(data, s, 1, f);
+    (void)t;
+
+    *size = s;
+
+end:
+
+    fclose(f);
+
+    return data;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 static void test()
 {
+	size_t size;
+	void* code = loadToMemory("/Users/danielcollin/code/capstone_m68k_test/m68k_test.bin", &size);
+	printf("size %d\n", (int)size);
 
 //#define M68K_CODE "\x4E\x71\x22\x00\x4E\x75"
-#define M68K_CODE "\x4E\x71"
+//#define M68K_CODE "\x4E\x71"
 
 	struct platform platforms[] = {
 		{
 			CS_ARCH_M68K,
 			CS_MODE_BIG_ENDIAN,
-			(unsigned char*)M68K_CODE,
-			sizeof(M68K_CODE) - 1,
+			code,
+			size,
+			//(unsigned char*)M68K_CODE,
+			//sizeof(M68K_CODE) - 1,
 			"M68K",
 		},
 	};
 
-	uint64_t address = 0x1000;
+	uint64_t address = 0x0000;
 	cs_insn *insn;
 	int i;
 	size_t count;
