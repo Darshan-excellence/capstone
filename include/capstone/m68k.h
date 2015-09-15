@@ -38,6 +38,7 @@ typedef enum m68k_reg {
 	M68K_REG_A7,
 
 	M68K_REG_SR,
+	M68K_REG_CCR,
 	M68K_REG_PC,
 
 	M68K_REG_ENDING,   // <-- mark the end of the list of registers
@@ -70,7 +71,10 @@ typedef enum m68k_adress_mode {
 
 	M68K_ADA_SHORT,				// Absolute Data Addressing  - Short
 	M68K_ADA_LONG,				// Absolute Data Addressing  - Long
-	M68K_IMMIDATE,				// Immidate value
+	M68K_IMMIDIATE,				// Immidate value
+
+	M68K_REG_GEN,				// Register General (not really a adressing mode)
+
 
 } m68k_adress_mode; 
 

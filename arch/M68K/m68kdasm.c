@@ -784,7 +784,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 
 		case 0x3c:
 		{
-			op->address_mode = M68K_IMMIDATE;
+			op->address_mode = M68K_IMMIDIATE;
 
 			if (size == 1)
 				op->imm = read_imm_8() & 0xff;
@@ -926,7 +926,7 @@ static void build_rr(int opcode, uint8_t size, int imm)
 	if (imm > 0)
 	{
 		info->op_count = 3;
-		op2->address_mode = M68K_IMMIDATE;
+		op2->address_mode = M68K_IMMIDIATE;
 		op2->imm = imm;
 	}
 }
@@ -964,7 +964,7 @@ static void build_imm_ea(int opcode, uint8_t size, int imm)
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
 	
-	op0->address_mode = M68K_IMMIDATE;
+	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = imm; 
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
@@ -984,7 +984,7 @@ static void build_3bit_d(int opcode, int size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
-	op0->address_mode = M68K_IMMIDATE;
+	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
 
 	op1->address_mode = M68K_RD_DATA;
@@ -1005,7 +1005,7 @@ static void build_3bit_ea(int opcode, int size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
-	op0->address_mode = M68K_IMMIDATE;
+	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
@@ -1036,7 +1036,7 @@ static void build_mm(int opcode, uint8_t size, int imm)
 	if (imm > 0)
 	{
 		info->op_count = 3;
-		op2->address_mode = M68K_IMMIDATE;
+		op2->address_mode = M68K_IMMIDIATE;
 		op2->imm = imm;
 	}
 }
@@ -1070,6 +1070,44 @@ static void build_ea_a(int opcode, uint8_t size)
 
 	op1->address_mode = M68K_RD_ADDRESS;
 	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+}
+
+static void build_pi_pi(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_RI_ADDRESS_PI;
+	op0->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+
+	op1->address_mode = M68K_RI_ADDRESS_PI;
+	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+}
+
+static build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->imm = imm; 
+
+	op1->address_mode = M68K_REG_GEN;
+	op1->reg = reg; 
 }
 
 
@@ -1291,12 +1329,14 @@ static void d68000_andi_32(void)
 
 static void d68000_andi_to_ccr(void)
 {
-	sprintf(g_dasm_str, "andi    %s, CCR", get_imm_str_u8());
+	build_imm_special_reg(M68K_INS_ANDI, read_imm_8(), 1, M68K_REG_CCR);
+	//sprintf(g_dasm_str, "andi    %s, CCR", get_imm_str_u8());
 }
 
 static void d68000_andi_to_sr(void)
 {
-	sprintf(g_dasm_str, "andi    %s, SR", get_imm_str_u16());
+	build_imm_special_reg(M68K_INS_ANDI, read_imm_8(), 1, M68K_REG_SR);
+	//sprintf(g_dasm_str, "andi    %s, SR", get_imm_str_u16());
 }
 
 static void d68000_asr_s_8(void)
@@ -1789,22 +1829,26 @@ static void d68000_clr_16(void)
 
 static void d68000_clr_32(void)
 {
-	sprintf(g_dasm_str, "clr.l   %s", get_ea_mode_str_32(g_cpu_ir));
+	build_ea(M68K_INS_CLR, 4);
+	//sprintf(g_dasm_str, "clr.l   %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_cmp_8(void)
 {
-	sprintf(g_dasm_str, "cmp.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_re(M68K_INS_CMP, 1);
+	//sprintf(g_dasm_str, "cmp.b   %s, D%d", get_ea_mode_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmp_16(void)
 {
-	sprintf(g_dasm_str, "cmp.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_re(M68K_INS_CMP, 2);
+	//sprintf(g_dasm_str, "cmp.w   %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmp_32(void)
 {
-	sprintf(g_dasm_str, "cmp.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_re(M68K_INS_CMP, 4);
+	//sprintf(g_dasm_str, "cmp.l   %s, D%d", get_ea_mode_str_32(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmpa_16(void)
@@ -1821,85 +1865,81 @@ static void d68000_cmpa_32(void)
 
 static void d68000_cmpi_8(void)
 {
-	char* str = get_imm_str_s8();
-	sprintf(g_dasm_str, "cmpi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "cmpi.b  %s, %s", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcdi_8(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s8();
-	sprintf(g_dasm_str, "cmpi.b  %s, %s; (2+)", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "cmpi.b  %s, %s; (2+)", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcix_8(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s8();
-	sprintf(g_dasm_str, "cmpi.b  %s, %s; (2+)", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 1, read_imm_8());
+	//sprintf(g_dasm_str, "cmpi.b  %s, %s; (2+)", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_cmpi_16(void)
 {
-	char* str;
-	str = get_imm_str_s16();
-	sprintf(g_dasm_str, "cmpi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "cmpi.w  %s, %s", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcdi_16(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s16();
-	sprintf(g_dasm_str, "cmpi.w  %s, %s; (2+)", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "cmpi.w  %s, %s; (2+)", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcix_16(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s16();
-	sprintf(g_dasm_str, "cmpi.w  %s, %s; (2+)", str, get_ea_mode_str_16(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 2, read_imm_16());
+	//sprintf(g_dasm_str, "cmpi.w  %s, %s; (2+)", str, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_cmpi_32(void)
 {
 	char* str;
-	str = get_imm_str_s32();
-	sprintf(g_dasm_str, "cmpi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 4, read_imm_32());
+	//sprintf(g_dasm_str, "cmpi.l  %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcdi_32(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s32();
-	sprintf(g_dasm_str, "cmpi.l  %s, %s; (2+)", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 4, read_imm_32());
+	//sprintf(g_dasm_str, "cmpi.l  %s, %s; (2+)", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68020_cmpi_pcix_32(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	str = get_imm_str_s32();
-	sprintf(g_dasm_str, "cmpi.l  %s, %s; (2+)", str, get_ea_mode_str_32(g_cpu_ir));
+	build_imm_ea(M68K_INS_CMPI, 4, read_imm_32());
+	//sprintf(g_dasm_str, "cmpi.l  %s, %s; (2+)", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_cmpm_8(void)
 {
-	sprintf(g_dasm_str, "cmpm.b  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
+	build_pi_pi(M68K_INS_CMPM, 1);
+	//sprintf(g_dasm_str, "cmpm.b  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmpm_16(void)
 {
-	sprintf(g_dasm_str, "cmpm.w  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
+	build_pi_pi(M68K_INS_CMPM, 2);
+	//sprintf(g_dasm_str, "cmpm.w  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
 
 static void d68000_cmpm_32(void)
 {
-	sprintf(g_dasm_str, "cmpm.l  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
+	build_pi_pi(M68K_INS_CMPM, 4);
+	//sprintf(g_dasm_str, "cmpm.l  (A%d)+, (A%d)+", g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
 
 static void d68020_cpbcc_16(void)
@@ -2731,7 +2771,8 @@ static void d68000_moveq(void)
 static void d68040_move16_pi_pi(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	sprintf(g_dasm_str, "move16  (A%d)+, (A%d)+; (4)", g_cpu_ir&7, (read_imm_16()>>12)&7);
+	build_pi_pi(M68K_INS_MOVE16, 0);
+	//sprintf(g_dasm_str, "move16  (A%d)+, (A%d)+; (4)", g_cpu_ir&7, (read_imm_16()>>12)&7);
 }
 
 static void d68040_move16_pi_al(void)
