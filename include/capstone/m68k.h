@@ -98,6 +98,7 @@ typedef struct m68k_op_mem {
 	uint32_t out_disp; // outher displacement 
 	uint8_t scale;	// scale for index register
 	uint16_t disp;	// displacement value
+	uint8_t bitfield; // set to true if the two values bellow should be used 
 	uint8_t  width;	// used for bf* instructions 
 	uint8_t offset;	// used for bf* instructions
 	uint8_t index_size; // 0 = w, 1 = l
