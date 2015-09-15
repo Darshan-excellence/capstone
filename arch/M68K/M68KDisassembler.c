@@ -264,13 +264,16 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		default:
 			break;
 	}
+
+	if (op->mem.bitfield)
+		SStream_concat(O, "{%d:%d}", op->mem.offset, op->mem.width);
 }
 
 void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 {
-	printf("MI->Opcode %d\n", MI->Opcode);
-
 	cs_m68k* info = &MI->flat_insn->detail->m68k;
+
+	const int op_count = info->op_count;
 
 	SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
 
@@ -281,19 +284,15 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 		case 4 : SStream_concat0(O, ".l"); break;
 	}
 
-	if (info->op_count == 0)
-		return;
-	
 	SStream_concat0(O, " ");
 
-	printAddressingMode(O, &info->operands[0]);
+	for (int i  = 0; i < op_count; ++i)
+	{
+		printAddressingMode(O, &info->operands[i]);
 
-	if (info->op_count == 1)
-		return;
-
-	SStream_concat0(O, ",");
-
-	printAddressingMode(O, &info->operands[1]);
+		if ((i + 1) != op_count)
+			SStream_concat0(O, ",");
+	}
 }
 
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)

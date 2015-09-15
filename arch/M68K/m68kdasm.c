@@ -1143,6 +1143,69 @@ static void build_bcc(int size, int jump_offset)
 	op->imm = jump_offset; 
 }
 
+static void build_d_d_ea(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	uint extension = read_imm_16();
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 3;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	cs_m68k_op* op2 = &info->operands[2];
+
+	op0->address_mode = M68K_RD_DATA;
+	op0->reg = M68K_REG_D0 + (extension & 7);
+
+	op1->address_mode = M68K_RD_DATA;
+	op1->reg = M68K_REG_D0 + ((extension >> 6) & 7);
+
+	get_ea_mode_op(op2, g_cpu_ir, size);
+}
+
+static void build_bitfield_ins(int opcode, int has_d_arg)
+{
+	uint8_t offset;
+	uint8_t width;
+
+	MCInst_setOpcode(g_inst, opcode);
+
+	uint extension = read_imm_16();
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op_ea = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 1;
+	info->op_size = 0; 
+
+	if (BIT_B(extension))
+		offset = (extension >> 6) & 7;
+	else
+		offset = (extension >> 6) & 31;
+
+	if (BIT_5(extension))
+		width = extension & 7;
+	else
+		width = g_5bit_data_table[extension & 31];
+
+	if (has_d_arg) {
+		info->op_count = 2;
+		op1->address_mode = M68K_RD_DATA;
+		op1->reg = M68K_REG_D0 + (extension>>12) & 7;
+	}
+
+	get_ea_mode_op(op_ea, g_cpu_ir, 1);
+
+	op_ea->mem.bitfield = 1;
+	op_ea->mem.width = width;
+	op_ea->mem.offset = offset;
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -1367,7 +1430,7 @@ static void d68000_andi_to_ccr(void)
 
 static void d68000_andi_to_sr(void)
 {
-	build_imm_special_reg(M68K_INS_ANDI, read_imm_8(), 1, M68K_REG_SR);
+	build_imm_special_reg(M68K_INS_ANDI, read_imm_16(), 2, M68K_REG_SR);
 	//sprintf(g_dasm_str, "andi    %s, SR", get_imm_str_u16());
 }
 
@@ -1519,6 +1582,9 @@ static void d68010_bkpt(void)
 
 static void d68020_bfchg(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFCHG, false);
+/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1536,10 +1602,15 @@ static void d68020_bfchg(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfchg   %s {%s:%s}; (2+)", get_ea_mode_str_8(g_cpu_ir), offset, width);
+*/
 }
+
 
 static void d68020_bfclr(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFCLR, false);
+/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1557,10 +1628,14 @@ static void d68020_bfclr(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfclr   %s {%s:%s}; (2+)", get_ea_mode_str_8(g_cpu_ir), offset, width);
+*/
 }
 
 static void d68020_bfexts(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFEXTS, true);
+/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1578,10 +1653,14 @@ static void d68020_bfexts(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfexts  D%d, %s {%s:%s}; (2+)", (extension>>12)&7, get_ea_mode_str_8(g_cpu_ir), offset, width);
+*/
 }
 
 static void d68020_bfextu(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFEXTU, true);
+	/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1599,10 +1678,15 @@ static void d68020_bfextu(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfextu  D%d, %s {%s:%s}; (2+)", (extension>>12)&7, get_ea_mode_str_8(g_cpu_ir), offset, width);
+	*/
 }
 
 static void d68020_bfffo(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFFFO, true);
+
+	/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1620,10 +1704,23 @@ static void d68020_bfffo(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfffo   D%d, %s {%s:%s}; (2+)", (extension>>12)&7, get_ea_mode_str_8(g_cpu_ir), offset, width);
+	*/
 }
 
 static void d68020_bfins(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFINS, true);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	// a bit hacky but we need to flip the args on only this instruction
+
+	cs_m68k_op temp = info->operands[0];
+	info->operands[0] = info->operands[1];
+	info->operands[1] = temp;
+
+	/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1641,10 +1738,15 @@ static void d68020_bfins(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfins   D%d, %s {%s:%s}; (2+)", (extension>>12)&7, get_ea_mode_str_8(g_cpu_ir), offset, width);
+	*/
 }
 
 static void d68020_bfset(void)
 {
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	build_bitfield_ins(M68K_INS_BFSET, false);
+
+	/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1662,10 +1764,14 @@ static void d68020_bfset(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bfset   %s {%s:%s}; (2+)", get_ea_mode_str_8(g_cpu_ir), offset, width);
+	*/
 }
 
 static void d68020_bftst(void)
 {
+	build_bitfield_ins(M68K_INS_BFTST, false);
+
+	/*
 	uint extension;
 	char offset[3];
 	char width[3];
@@ -1683,6 +1789,7 @@ static void d68020_bftst(void)
 	else
 		sprintf(width, "%d", g_5bit_data_table[extension&31]);
 	sprintf(g_dasm_str, "bftst   %s {%s:%s}; (2+)", get_ea_mode_str_8(g_cpu_ir), offset, width);
+	*/
 }
 
 static void d68000_bra_8(void)
@@ -1758,26 +1865,24 @@ static void d68020_callm(void)
 
 static void d68020_cas_8(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "cas.b   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_d_d_ea(M68K_INS_CAS, 1);
+	//uint extension = read_imm_16();
+	//sprintf(g_dasm_str, "cas.b   D%d, D%d, %s; (2+)", extension&7, (extension>>6)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cas_16(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "cas.w   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_16(g_cpu_ir));
+	build_d_d_ea(M68K_INS_CAS, 2);
+	//sprintf(g_dasm_str, "cas.w   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68020_cas_32(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "cas.l   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_32(g_cpu_ir));
+	build_d_d_ea(M68K_INS_CAS, 4);
+	//sprintf(g_dasm_str, "cas.l   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68020_cas2_16(void)
@@ -2175,12 +2280,14 @@ static void d68000_eori_32(void)
 
 static void d68000_eori_to_ccr(void)
 {
-	sprintf(g_dasm_str, "eori    %s, CCR", get_imm_str_u8());
+	build_imm_special_reg(M68K_INS_EORI, read_imm_8(), 1, M68K_REG_CCR);
+//	sprintf(g_dasm_str, "eori    %s, CCR", get_imm_str_u8());
 }
 
 static void d68000_eori_to_sr(void)
 {
-	sprintf(g_dasm_str, "eori    %s, SR", get_imm_str_u16());
+	build_imm_special_reg(M68K_INS_EORI, read_imm_16(), 2, M68K_REG_SR);
+	//sprintf(g_dasm_str, "eori    %s, SR", get_imm_str_u16());
 }
 
 static void d68000_exg_dd(void)
@@ -2990,12 +3097,14 @@ static void d68000_ori_32(void)
 
 static void d68000_ori_to_ccr(void)
 {
-	sprintf(g_dasm_str, "ori     %s, CCR", get_imm_str_u8());
+	build_imm_special_reg(M68K_INS_ORI, read_imm_8(), 1, M68K_REG_CCR);
+	//sprintf(g_dasm_str, "ori     %s, CCR", get_imm_str_u8());
 }
 
 static void d68000_ori_to_sr(void)
 {
-	sprintf(g_dasm_str, "ori     %s, SR", get_imm_str_u16());
+	build_imm_special_reg(M68K_INS_ORI, read_imm_16(), 2, M68K_REG_SR);
+	//sprintf(g_dasm_str, "ori     %s, SR", get_imm_str_u16());
 }
 
 static void d68020_pack_rr(void)
