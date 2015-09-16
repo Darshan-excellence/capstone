@@ -302,12 +302,20 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
 
-	printf("getInstruction: %d %p\n", (int)address, s_disassemblyBuffer);
 
-	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68040);
+	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
+	printf("getInstruction: %p %d %p\n", (void*)address, s, s_disassemblyBuffer);
 
+	
+	
 	if (s == 0)
 		return false;
+
+
+	SStream ss;
+	SStream_Init(&ss);
+	M68K_printInst(instr, &ss, info);
+	printf("%s\n", ss.buffer);
 
 	*size = (uint16_t)s;
 
