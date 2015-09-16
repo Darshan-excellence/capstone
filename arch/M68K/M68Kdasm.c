@@ -3506,7 +3506,9 @@ static void d68000_tas(void)
 
 static void d68000_trap(void)
 {
-	sprintf(g_dasm_str, "trap    #$%x", g_cpu_ir&0xf);
+	build_bcc(0, g_cpu_ir&0xf);
+	MCInst_setOpcode(g_inst, M68K_INS_TRAP);
+	//sprintf(g_dasm_str, "trap    #$%x", g_cpu_ir&0xf);
 }
 
 static void d68020_trapcc_0(void)
