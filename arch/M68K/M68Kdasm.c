@@ -1009,6 +1009,27 @@ static void build_3bit_d(int opcode, int size)
 	op1->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 }
 
+static void build_3bit_q(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->imm = (g_cpu_ir & 0xff);
+
+	op1->address_mode = M68K_RD_DATA;
+	op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
+}
+
 static void build_3bit_ea(int opcode, int size)
 {
 	MCInst_setOpcode(g_inst, opcode);
@@ -2939,6 +2960,7 @@ static void d68010_moves_32(void)
 
 static void d68000_moveq(void)
 {
+	build_3bit_q(M68K_INS_MOVEQ, 0);
 	sprintf(g_dasm_str, "moveq   #%s, D%d", make_signed_hex_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
