@@ -1609,17 +1609,7 @@ static void d68000_bclr_s(void)
 static void d68010_bkpt(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	
-	MCInst_setOpcode(g_inst, M68K_INS_BKPT);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 1;
-	info->op_size = 0; 
-
-	cs_m68k_op* op = &info->operands[0];
-	op->address_mode = M68K_IMMIDIATE;
-	op->imm = g_cpu_ir & 7;
+	build_bxx(M68K_INS_BKPT, 0, g_cpu_ir & 7);
 }
 
 static void d68020_bfchg(void)
