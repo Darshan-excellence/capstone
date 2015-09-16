@@ -1165,19 +1165,24 @@ static void build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
 	op1->reg = reg; 
 }
 
-static void build_bcc(int size, int jump_offset)
+static void build_bxx(int opcode, int size, int jump_offset)
 {
-	MCInst_setOpcode(g_inst, s_branch_lut[(g_cpu_ir >> 8) & 0xf]);
+	MCInst_setOpcode(g_inst, opcode);
 
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	info->op_count = 1;
-	info->op_size = size; 
+	info->op_size = size;
 
 	cs_m68k_op* op = &info->operands[0];
 	
 	op->address_mode = M68K_IMMIDIATE;
-	op->imm = jump_offset; 
+	op->imm = jump_offset;
+}
+
+static void build_bcc(int size, int jump_offset)
+{
+	build_bxx(s_branch_lut[(g_cpu_ir >> 8) & 0xf], size, jump_offset);
 }
 
 static void build_d_d_ea(int opcode, int size)
@@ -1832,20 +1837,23 @@ static void d68020_bftst(void)
 static void d68000_bra_8(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "bra     %x", temp_pc + make_int_8(g_cpu_ir));
+	build_bxx(M68K_INS_BRA, 1, temp_pc + make_int_8(g_cpu_ir));
+	//sprintf(g_dasm_str, "bra     %x", temp_pc + make_int_8(g_cpu_ir));
 }
 
 static void d68000_bra_16(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "bra     %x", temp_pc + make_int_16(read_imm_16()));
+	build_bxx(M68K_INS_BRA, 2, temp_pc + make_int_16(read_imm_16()));
+	//sprintf(g_dasm_str, "bra     %x", temp_pc + make_int_16(read_imm_16()));
 }
 
 static void d68020_bra_32(void)
 {
 	uint temp_pc = g_cpu_pc;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "bra     %x; (2+)", temp_pc + read_imm_32());
+	build_bxx(M68K_INS_BRA, 4, temp_pc + read_imm_32());
+	//sprintf(g_dasm_str, "bra     %x; (2+)", temp_pc + read_imm_32());
 }
 
 static void d68000_bset_r(void)
@@ -1863,20 +1871,23 @@ static void d68000_bset_s(void)
 static void d68000_bsr_8(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "bsr     %x", temp_pc + make_int_8(g_cpu_ir));
+	build_bxx(M68K_INS_BSR, 1, temp_pc + make_int_8(g_cpu_ir));
+	//sprintf(g_dasm_str, "bsr     %x", temp_pc + make_int_8(g_cpu_ir));
 }
 
 static void d68000_bsr_16(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "bsr     %x", temp_pc + make_int_16(read_imm_16()));
+	build_bxx(M68K_INS_BSR, 2, temp_pc + make_int_16(read_imm_16()));
+	//sprintf(g_dasm_str, "bsr     %x", temp_pc + make_int_16(read_imm_16()));
 }
 
 static void d68020_bsr_32(void)
 {
 	uint temp_pc = g_cpu_pc;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "bsr     %x; (2+)", temp_pc + peek_imm_32());
+	build_bxx(M68K_INS_BSR, 4, temp_pc + peek_imm_32());
+	//sprintf(g_dasm_str, "bsr     %x; (2+)", temp_pc + peek_imm_32());
 }
 
 static void d68000_btst_r(void)
@@ -3528,8 +3539,7 @@ static void d68000_tas(void)
 
 static void d68000_trap(void)
 {
-	build_bcc(0, g_cpu_ir&0xf);
-	MCInst_setOpcode(g_inst, M68K_INS_TRAP);
+	build_bxx(M68K_INS_TRAP, 0, g_cpu_ir&0xf);
 	//sprintf(g_dasm_str, "trap    #$%x", g_cpu_ir&0xf);
 }
 
