@@ -3665,7 +3665,8 @@ static void d68000_subx_mm_32(void)
 
 static void d68000_swap(void)
 {
-	sprintf(g_dasm_str, "swap    D%d", g_cpu_ir&7);
+	build_d(M68K_INS_SWAP, 0);
+	//sprintf(g_dasm_str, "swap    D%d", g_cpu_ir&7);
 }
 
 static void d68000_tas(void)
@@ -3700,7 +3701,8 @@ static void d68020_trapcc_32(void)
 
 static void d68000_trapv(void)
 {
-	sprintf(g_dasm_str, "trapv");
+	MCInst_setOpcode(g_inst, M68K_INS_TRAPV);
+	//sprintf(g_dasm_str, "trapv");
 }
 
 static void d68000_tst_8(void)
@@ -3800,7 +3802,17 @@ static void d68020_tst_i_32(void)
 
 static void d68000_unlk(void)
 {
-	sprintf(g_dasm_str, "unlk    A%d", g_cpu_ir&7);
+	MCInst_setOpcode(g_inst, M68K_INS_UNLK);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 1;
+	info->op_size = 0; 
+
+	cs_m68k_op* op = &info->operands[0];
+
+	op->address_mode = M68K_RD_ADDRESS;
+	op->reg = M68K_REG_A0 + (g_cpu_ir & 7);
 }
 
 static void d68020_unpk_rr(void)
