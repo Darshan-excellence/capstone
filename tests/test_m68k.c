@@ -121,7 +121,7 @@ end:
 static void test()
 {
 	size_t size;
-	void* code = loadToMemory("/Users/danielcollin/code/capstone_m68k_test/m68k_test.bin", &size);
+	void* code = loadToMemory("../u/m68k.bin", &size);
 	printf("size %d\n", (int)size);
 
 //#define M68K_CODE "\x4E\x71\x22\x00\x4E\x75"
@@ -139,7 +139,7 @@ static void test()
 		},
 	};
 
-	uint64_t address = 0x0000;
+	uint64_t address = 0x030672;
 	cs_insn *insn;
 	int i;
 	size_t count;
