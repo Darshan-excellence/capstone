@@ -3539,7 +3539,8 @@ static void d68000_scc(void)
 
 static void d68000_stop(void)
 {
-	sprintf(g_dasm_str, "stop    %s", get_imm_str_s16());
+	build_bxx(M68K_INS_STOP, 0, read_imm_16()); 
+	//sprintf(g_dasm_str, "stop    %s", get_imm_str_s16());
 }
 
 static void d68000_sub_er_8(void)
