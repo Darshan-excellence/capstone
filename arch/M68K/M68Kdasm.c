@@ -1248,6 +1248,20 @@ static void build_bitfield_ins(int opcode, int has_d_arg)
 	op_ea->mem.offset = offset;
 }
 
+static void build_d(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op = &info->operands[0];
+
+	info->op_count = 1;
+	info->op_size = size; 
+
+	op->address_mode = M68K_RD_DATA;
+	op->reg = M68K_REG_D0 + (g_cpu_ir & 7);
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2346,18 +2360,21 @@ static void d68000_exg_da(void)
 
 static void d68000_ext_16(void)
 {
-	sprintf(g_dasm_str, "ext.w   D%d", g_cpu_ir&7);
+	build_d(M68K_INS_EXT, 2);
+	//sprintf(g_dasm_str, "ext.w   D%d", g_cpu_ir&7);
 }
 
 static void d68000_ext_32(void)
 {
-	sprintf(g_dasm_str, "ext.l   D%d", g_cpu_ir&7);
+	build_d(M68K_INS_EXT, 4);
+	//sprintf(g_dasm_str, "ext.l   D%d", g_cpu_ir&7);
 }
 
 static void d68020_extb_32(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "extb.l  D%d; (2+)", g_cpu_ir&7);
+	build_d(M68K_INS_EXTB, 4);
+	//sprintf(g_dasm_str, "extb.l  D%d; (2+)", g_cpu_ir&7);
 }
 
 static void d68000_jmp(void)
@@ -2964,7 +2981,7 @@ static void d68010_moves_32(void)
 static void d68000_moveq(void)
 {
 	build_3bit_q(M68K_INS_MOVEQ, 0);
-	sprintf(g_dasm_str, "moveq   #%s, D%d", make_signed_hex_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
+	//sprintf(g_dasm_str, "moveq   #%s, D%d", make_signed_hex_str_8(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68040_move16_pi_pi(void)
