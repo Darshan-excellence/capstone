@@ -111,7 +111,8 @@ static const char* s_instruction_names[] = {
 	"abcd", "add", "adda", "addi", "addq", "addx", "and", "andi", "asl", "asr", "bhs", "blo", "bhi", "bls", "bcc", "bcs", "bne", "beq", "bvc",
 	"bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble", "bra", "bsr", "bchg", "bclr", "bset", "btst", "bfchg", "bfclr", "bfexts", "bfextu", "bfffo", "bfins",
 	"bfset", "bftst", "bkpt", "cas", "cas2", "chk", "chk2", "clr", "cmp", "cmpa", "cmpi", "cmpm", "cmp2", "cinvl", "cinvp", "cinva", "cpushl", "cpushp",
-	"cpusha", "divs", "divsl", "divu", "divul", "eor", "eori", "exg", "ext", "extb", "fabs", "fsabs", "fdabs", "facos", "fadd", "fsadd", "fdadd", "fasin",
+	"cpusha", "dbt", "dbf", "dbhi", "dbls", "dbcc", "dbcs", "dbne", "dbeq", "dbvc", "dbvs", "dbpl", "dbmi", "dbge", "dblt", "dbgt", "dble", "dbra",
+	"divs", "divsl", "divu", "divul", "eor", "eori", "exg", "ext", "extb", "fabs", "fsabs", "fdabs", "facos", "fadd", "fsadd", "fdadd", "fasin",
 	"fatan", "fatanh", "fbf", "fbeq", "fbogt", "fboge", "fbolt", "fbole", "fbogl", "fbor", "fbun", "fbueq", "fbugt", "fbuge", "fbult", "fbule", "fbne", "fbt",
 	"fbsf", "fbseq", "fbgt", "fbge", "fblt", "fble", "fbgl", "fbgle", "fbngle", "fbngl", "fbnle", "fbnlt", "fbnge", "fbngt", "fbsne", "fbst", "fcmp", "fcos",
 	"fcosh", "fdbf", "fdbeq", "fdbogt", "fdboge", "fdbolt", "fdbole", "fdbogl", "fdbor", "fdbun", "fdbueq", "fdbugt", "fdbuge", "fdbult", "fdbule", "fdbne",
@@ -178,6 +179,56 @@ const char* getRegName(m68k_reg reg)
 	return s_reg_names[(int)reg];
 }
 
+static void registerBits(SStream* O, const cs_m68k_op* op)
+{
+	char buffer[40];
+	unsigned int first;
+	unsigned int run_length;
+	unsigned int data = op->mem.register_bits; 
+
+	buffer[0] = 0;
+	for (int i = 0; i < 8; ++i)
+	{
+		if (data & (1 << i)) {
+			first = i;
+			run_length = 0;
+			while (i < 7 && (data & (1 << (i + 1)))) {
+				i++;
+				run_length++;
+			}
+
+			if (buffer[0] != 0)
+				strcat(buffer, "/");
+
+			sprintf(buffer + strlen(buffer), "d%d", first);
+			if (run_length > 0)
+				sprintf(buffer + strlen(buffer), "-d%d", first + run_length);
+		}
+	}
+
+	for (int i = 0; i < 8; ++i) {
+		if (data & (1 << (i +8 ))) {
+			first = i;
+			run_length = 0;
+
+			while(i < 7 && (data & (1 << (i + 8 + 1)))) {
+				i++;
+				run_length++;
+			}
+
+			if (buffer[0] != 0)
+				strcat(buffer, "/");
+
+			sprintf(buffer + strlen(buffer), "a%d", first);
+
+			if (run_length > 0)
+				sprintf(buffer + strlen(buffer), "-a%d", first + run_length);
+		}
+	}
+
+	SStream_concat(O, "%s", buffer);
+}
+
 void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
 	switch (op->address_mode)
@@ -192,6 +243,7 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
 		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
 		case M68K_IMMIDIATE : SStream_concat(O, "#$%x", op->imm); break; 
+		case M68K_REG_BITS : registerBits(O, op); break;
 		case M68K_PCIIWI_8_BIT : 
 		{
 			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 

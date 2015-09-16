@@ -1306,6 +1306,55 @@ static void build_d(int opcode, int size)
 	op->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 }
 
+static uint reverse_bits(uint v)
+{
+	uint r = v; // r will be reversed bits of v; first get LSB of v
+	int s = 16 - 1; // extra shift needed at end
+
+	for (v >>= 1; v; v >>= 1)
+	{   
+		r <<= 1;
+		r |= v & 1;
+		s--;
+	}
+
+	return r <<= s; // shift when v's highest bits are zero
+}
+
+static void build_movem_re(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	op0->address_mode = M68K_REG_BITS;
+	op0->mem.register_bits = reverse_bits(read_imm_16()); 
+
+	get_ea_mode_op(op1, g_cpu_ir, size);
+}
+
+static void build_movem_er(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op1->address_mode = M68K_REG_BITS;
+	op1->mem.register_bits = read_imm_16(); 
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2689,6 +2738,9 @@ static void d68010_movec(void)
 
 static void d68000_movem_pd_16(void)
 {
+	build_movem_re(M68K_INS_MOVEM, 2);
+
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2733,10 +2785,13 @@ static void d68000_movem_pd_16(void)
 		}
 	}
 	sprintf(g_dasm_str, "movem.w %s, %s", buffer, get_ea_mode_str_16(g_cpu_ir));
+	*/
 }
 
 static void d68000_movem_pd_32(void)
 {
+	build_movem_re(M68K_INS_MOVEM, 4);
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2780,11 +2835,18 @@ static void d68000_movem_pd_32(void)
 				sprintf(buffer+strlen(buffer), "-A%d", first + run_length);
 		}
 	}
+
+	printf("here...\n");
 	sprintf(g_dasm_str, "movem.l %s, %s", buffer, get_ea_mode_str_32(g_cpu_ir));
+*/
+
 }
 
 static void d68000_movem_er_16(void)
 {
+	build_movem_er(M68K_INS_MOVEM, 2);
+
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2829,10 +2891,14 @@ static void d68000_movem_er_16(void)
 		}
 	}
 	sprintf(g_dasm_str, "movem.w %s, %s", get_ea_mode_str_16(g_cpu_ir), buffer);
+	*/
 }
 
 static void d68000_movem_er_32(void)
 {
+	build_movem_er(M68K_INS_MOVEM, 4);
+
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2877,10 +2943,14 @@ static void d68000_movem_er_32(void)
 		}
 	}
 	sprintf(g_dasm_str, "movem.l %s, %s", get_ea_mode_str_32(g_cpu_ir), buffer);
+	*/
 }
 
 static void d68000_movem_re_16(void)
 {
+	build_movem_re(M68K_INS_MOVEM, 2);
+
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2925,10 +2995,14 @@ static void d68000_movem_re_16(void)
 		}
 	}
 	sprintf(g_dasm_str, "movem.w %s, %s", buffer, get_ea_mode_str_16(g_cpu_ir));
+	*/
 }
 
 static void d68000_movem_re_32(void)
 {
+	build_movem_re(M68K_INS_MOVEM, 4);
+
+	/*
 	uint data = read_imm_16();
 	char buffer[40];
 	uint first;
@@ -2973,6 +3047,7 @@ static void d68000_movem_re_32(void)
 		}
 	}
 	sprintf(g_dasm_str, "movem.l %s, %s", buffer, get_ea_mode_str_32(g_cpu_ir));
+	*/
 }
 
 static void d68000_movep_re_16(void)

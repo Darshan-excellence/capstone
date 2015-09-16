@@ -74,7 +74,7 @@ typedef enum m68k_adress_mode {
 	M68K_IMMIDIATE,				// Immidate value
 
 	M68K_REG_GEN,				// Register General (not really a adressing mode)
-
+	M68K_REG_BITS,				// Registes bits movem/cas2/etc (not really a adressing mode)
 
 } m68k_adress_mode; 
 
@@ -96,8 +96,9 @@ typedef struct m68k_op_mem {
 	m68k_reg in_base_reg; // indirect base register (or M68K_REG_INVALID if irrelevant)
 	uint32_t in_disp; // indirect displacement 
 	uint32_t out_disp; // outher displacement 
-	uint8_t scale;	// scale for index register
 	uint16_t disp;	// displacement value
+	uint16_t register_bits; // register bits for movem/cas2/etc (always in d0-d7 - a0-a7 order)
+	uint8_t scale;	// scale for index register
 	uint8_t bitfield; // set to true if the two values bellow should be used 
 	uint8_t  width;	// used for bf* instructions 
 	uint8_t offset;	// used for bf* instructions
