@@ -1084,7 +1084,7 @@ static void build_ea_a(int opcode, uint8_t size)
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
 
-	get_ea_mode_op(op1, g_cpu_ir, size);
+	get_ea_mode_op(op0, g_cpu_ir, size);
 
 	op1->address_mode = M68K_RD_ADDRESS;
 	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
