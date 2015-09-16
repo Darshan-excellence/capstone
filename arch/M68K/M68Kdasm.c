@@ -2372,12 +2372,14 @@ static void d68020_extb_32(void)
 
 static void d68000_jmp(void)
 {
-	sprintf(g_dasm_str, "jmp     %s", get_ea_mode_str_32(g_cpu_ir));
+	build_bxx(M68K_INS_JMP, 0, peek_imm_32());
+	//sprintf(g_dasm_str, "jmp     %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_jsr(void)
 {
-	sprintf(g_dasm_str, "jsr     %s", get_ea_mode_str_32(g_cpu_ir));
+	build_bxx(M68K_INS_JSR, 0, peek_imm_32());
+	//sprintf(g_dasm_str, "jsr     %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_lea(void)
