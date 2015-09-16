@@ -1609,17 +1609,7 @@ static void d68000_bclr_s(void)
 static void d68010_bkpt(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	
-	MCInst_setOpcode(g_inst, M68K_INS_BKPT);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 1;
-	info->op_size = 0; 
-
-	cs_m68k_op* op = &info->operands[0];
-	op->address_mode = M68K_IMMIDIATE;
-	op->imm = g_cpu_ir & 7;
+	build_bxx(M68K_INS_BKPT, 0, g_cpu_ir & 7);
 }
 
 static void d68020_bfchg(void)
@@ -2372,12 +2362,14 @@ static void d68020_extb_32(void)
 
 static void d68000_jmp(void)
 {
-	sprintf(g_dasm_str, "jmp     %s", get_ea_mode_str_32(g_cpu_ir));
+	build_bxx(M68K_INS_JMP, 0, peek_imm_32());
+	//sprintf(g_dasm_str, "jmp     %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_jsr(void)
 {
-	sprintf(g_dasm_str, "jsr     %s", get_ea_mode_str_32(g_cpu_ir));
+	build_bxx(M68K_INS_JSR, 0, peek_imm_32());
+	//sprintf(g_dasm_str, "jsr     %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_lea(void)
@@ -3008,12 +3000,14 @@ static void d68040_move16_al_ai(void)
 
 static void d68000_muls(void)
 {
-	sprintf(g_dasm_str, "muls.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INS_MULS, 2);
+	//sprintf(g_dasm_str, "muls.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_mulu(void)
 {
-	sprintf(g_dasm_str, "mulu.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INS_MULU, 2);
+	//sprintf(g_dasm_str, "mulu.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68020_mull(void)
