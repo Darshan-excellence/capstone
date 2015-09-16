@@ -1090,6 +1090,22 @@ static void build_ea_a(int opcode, uint8_t size)
 	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
 }
 
+static void build_ea_ea(int opcode, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size;
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	get_ea_mode_op(op0, g_cpu_ir, size);
+	get_ea_mode_op(op1, (((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)), size);
+}
+
 static void build_pi_pi(int opcode, int size)
 {
 	MCInst_setOpcode(g_inst, opcode);
@@ -2433,20 +2449,23 @@ static void d68000_lsl_ea(void)
 
 static void d68000_move_8(void)
 {
-	char* str = get_ea_mode_str_8(g_cpu_ir);
-	sprintf(g_dasm_str, "move.b  %s, %s", str, get_ea_mode_str_8(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
+	build_ea_ea(M68K_INS_MOVE, 1);
+	//char* str = get_ea_mode_str_8(g_cpu_ir);
+	//sprintf(g_dasm_str, "move.b  %s, %s", str, get_ea_mode_str_8(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
 }
 
 static void d68000_move_16(void)
 {
-	char* str = get_ea_mode_str_16(g_cpu_ir);
-	sprintf(g_dasm_str, "move.w  %s, %s", str, get_ea_mode_str_16(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
+	build_ea_ea(M68K_INS_MOVE, 2);
+	//char* str = get_ea_mode_str_16(g_cpu_ir);
+	//sprintf(g_dasm_str, "move.w  %s, %s", str, get_ea_mode_str_16(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
 }
 
 static void d68000_move_32(void)
 {
-	char* str = get_ea_mode_str_32(g_cpu_ir);
-	sprintf(g_dasm_str, "move.l  %s, %s", str, get_ea_mode_str_32(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
+	build_ea_ea(M68K_INS_MOVE, 4);
+	//char* str = get_ea_mode_str_32(g_cpu_ir);
+	//sprintf(g_dasm_str, "move.l  %s, %s", str, get_ea_mode_str_32(((g_cpu_ir>>9) & 7) | ((g_cpu_ir>>3) & 0x38)));
 }
 
 static void d68000_movea_16(void)
