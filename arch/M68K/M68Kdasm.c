@@ -3008,12 +3008,14 @@ static void d68040_move16_al_ai(void)
 
 static void d68000_muls(void)
 {
-	sprintf(g_dasm_str, "muls.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INS_MULS, 2);
+	//sprintf(g_dasm_str, "muls.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68000_mulu(void)
 {
-	sprintf(g_dasm_str, "mulu.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
+	build_er_1(M68K_INS_MULU, 2);
+	//sprintf(g_dasm_str, "mulu.w  %s, D%d", get_ea_mode_str_16(g_cpu_ir), (g_cpu_ir>>9)&7);
 }
 
 static void d68020_mull(void)
