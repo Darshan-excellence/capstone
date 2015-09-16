@@ -235,6 +235,26 @@ static m68k_insn s_branch_lut[] = {
 	M68K_INS_BLE,
 };
 
+static m68k_insn s_dbcc_lut[] = {
+	M68K_INS_DBT,
+	M68K_INS_DBF,
+	M68K_INS_DBHI,
+	M68K_INS_DBLS,
+	M68K_INS_DBCC,
+	M68K_INS_DBCS,
+	M68K_INS_DBNE,
+	M68K_INS_DBEQ,
+	M68K_INS_DBVC,
+	M68K_INS_DBVS,
+	M68K_INS_DBPL,
+	M68K_INS_DBMI,
+	M68K_INS_DBGE,
+	M68K_INS_DBLT,
+	M68K_INS_DBGT,
+	M68K_INS_DBLE,
+};
+
+
 static char* g_cpcc[64] =
 {/* 000    001    010    011    100    101    110    111 */
 	  "f",  "eq", "ogt", "oge", "olt", "ole", "ogl",  "or", /* 000 */
@@ -1183,6 +1203,30 @@ static void build_bxx(int opcode, int size, int jump_offset)
 static void build_bcc(int size, int jump_offset)
 {
 	build_bxx(s_branch_lut[(g_cpu_ir >> 8) & 0xf], size, jump_offset);
+}
+
+static void build_dbxx(int opcode, int size, int jump_offset)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = size;
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_RD_DATA;
+	op0->reg = M68K_REG_D0 + (g_cpu_ir & 7);
+	
+	op1->address_mode = M68K_IMMIDIATE;
+	op1->imm = jump_offset;
+}
+
+static void build_dbcc(int size, int jump_offset)
+{
+	build_dbxx(s_dbcc_lut[(g_cpu_ir >> 8) & 0xf], size, jump_offset);
 }
 
 static void build_d_d_ea(int opcode, int size)
@@ -2260,13 +2304,15 @@ static void d68040_cpush(void)
 static void d68000_dbra(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "dbra    D%d, %x", g_cpu_ir & 7, temp_pc + make_int_16(read_imm_16()));
+	build_dbxx(M68K_INS_DBRA, 0, temp_pc + make_int_16(read_imm_16()));
+	//sprintf(g_dasm_str, "dbra    D%d, %x", g_cpu_ir & 7, temp_pc + make_int_16(read_imm_16()));
 }
 
 static void d68000_dbcc(void)
 {
 	uint temp_pc = g_cpu_pc;
-	sprintf(g_dasm_str, "db%-2s    D%d, %x", g_cc[(g_cpu_ir>>8)&0xf], g_cpu_ir & 7, temp_pc + make_int_16(read_imm_16()));
+	build_dbcc(0, temp_pc + make_int_16(read_imm_16()));
+	//sprintf(g_dasm_str, "db%-2s    D%d, %x", g_cc[(g_cpu_ir>>8)&0xf], g_cpu_ir & 7, temp_pc + make_int_16(read_imm_16()));
 }
 
 static void d68000_divs(void)
