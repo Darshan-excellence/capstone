@@ -3,7 +3,7 @@ import sys
 _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
-from . import arm, arm64, mips, ppc, sparc, systemz, x86, xcore
+from . import arm, arm64, m68k, mips, ppc, sparc, systemz, x86, xcore
 
 __all__ = [
     'Cs',
@@ -27,6 +27,7 @@ __all__ = [
     'CS_ARCH_SPARC',
     'CS_ARCH_SYSZ',
     'CS_ARCH_XCORE',
+    'CS_ARCH_M68K',
     'CS_ARCH_ALL',
 
     'CS_MODE_LITTLE_ENDIAN',
@@ -113,7 +114,8 @@ CS_ARCH_PPC = 4
 CS_ARCH_SPARC = 5
 CS_ARCH_SYSZ = 6
 CS_ARCH_XCORE = 7
-CS_ARCH_MAX = 8
+CS_ARCH_M68K = 8
+CS_ARCH_MAX = 9
 CS_ARCH_ALL = 0xFFFF
 
 # disasm mode
@@ -258,6 +260,7 @@ class _cs_arch(ctypes.Union):
     _fields_ = (
         ('arm64', arm64.CsArm64),
         ('arm', arm.CsArm),
+        ('m68k', m68k.CsM68K),
         ('mips', mips.CsMips),
         ('x86', x86.CsX86),
         ('ppc', ppc.CsPpc),
@@ -555,6 +558,8 @@ class CsInsn(object):
                 self.modrm, self.sib, self.disp, \
                 self.sib_index, self.sib_scale, self.sib_base, self.xop_cc, self.sse_cc, \
                 self.avx_cc, self.avx_sae, self.avx_rm, self.eflags, self.operands) = x86.get_arch_info(self._raw.detail.contents.arch.x86)
+        elif arch == CS_ARCH_M68K:
+                (self.operands, self.op_size) = m68k.get_arch_info(self._raw.detail.contents.arch.m68k)
         elif arch == CS_ARCH_MIPS:
                 self.operands = mips.get_arch_info(self._raw.detail.contents.arch.mips)
         elif arch == CS_ARCH_PPC:
@@ -957,7 +962,7 @@ def debug():
     else:
         diet = "standard"
 
-    archs = { "arm": CS_ARCH_ARM, "arm64": CS_ARCH_ARM64, \
+    archs = { "arm": CS_ARCH_ARM, "arm64": CS_ARCH_ARM64, "m68k": CS_ARCH_M68K, \
         "mips": CS_ARCH_MIPS, "ppc": CS_ARCH_PPC, "sparc": CS_ARCH_SPARC, \
         "sysz": CS_ARCH_SYSZ, 'xcore': CS_ARCH_XCORE }
 
