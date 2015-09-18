@@ -731,6 +731,10 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 	/* Switch buffers so we don't clobber on a double-call to this function */
 	mode = mode == b1 ? b2 : b1;
 
+	// default to memory
+
+	op->type = M68K_OP_MEM;
+
 	switch (instruction & 0x3f)
 	{
 		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
@@ -738,6 +742,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 			/* data register direct */
 			op->address_mode = M68K_RD_DATA;
 			op->reg = M68K_REG_D0 + (instruction & 7);
+			op->type = M68K_OP_REG;
 			break;
 		}
 
@@ -746,6 +751,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 			/* address register direct */
 			op->address_mode = M68K_RD_ADDRESS;
 			op->reg = M68K_REG_A0 + (instruction & 7);
+			op->type = M68K_OP_REG;
 			break;
 		}
 
@@ -823,6 +829,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		case 0x3c:
 		{
 			op->address_mode = M68K_IMMIDIATE;
+			op->type = M68K_OP_IMM;
 
 			if (size == 1)
 				op->imm = read_imm_8() & 0xff;
@@ -1181,7 +1188,7 @@ static void build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = imm; 
 
-	op1->address_mode = M68K_REG_GEN;
+	op1->address_mode = M68K_AM_NONE;
 	op1->reg = reg; 
 }
 
@@ -1332,8 +1339,8 @@ static void build_movem_re(int opcode, int size)
 	info->op_count = 2;
 	info->op_size = size; 
 
-	op0->address_mode = M68K_REG_BITS;
-	op0->mem.register_bits = reverse_bits(read_imm_16()); 
+	op0->type = M68K_OP_REG_BITS;
+	op0->register_bits = reverse_bits(read_imm_16()); 
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
 }
@@ -1351,8 +1358,8 @@ static void build_movem_er(int opcode, int size)
 
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
-	op1->address_mode = M68K_REG_BITS;
-	op1->mem.register_bits = read_imm_16(); 
+	op1->type = M68K_OP_REG_BITS;
+	op1->register_bits = read_imm_16(); 
 }
 
 static void build_er_1(int opcode, uint8_t size)
@@ -4272,7 +4279,12 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	if (info)
+	{
 		memset(info, 0, sizeof(cs_m68k));
+
+		for (int i = 0; i < M68K_OPERAND_COUNT; ++i)
+			info->operands[i].type = M68K_OP_REG; 
+	}
 
 	if(!g_initialized)
 	{

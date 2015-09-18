@@ -184,7 +184,7 @@ static void registerBits(SStream* O, const cs_m68k_op* op)
 	char buffer[40];
 	unsigned int first;
 	unsigned int run_length;
-	unsigned int data = op->mem.register_bits; 
+	unsigned int data = op->register_bits; 
 
 	buffer[0] = 0;
 	for (int i = 0; i < 8; ++i)
@@ -233,6 +233,24 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
 	switch (op->address_mode)
 	{
+		case M68K_AM_NONE:
+		{
+			switch (op->type)
+			{
+				case M68K_OP_REG_BITS:
+				{
+					registerBits(O, op);
+					break;
+				}
+
+				default:
+					break;
+			}
+
+			break;
+		}
+
+
 		case M68K_RD_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
 		case M68K_RD_ADDRESS : SStream_concat(O, "a%d", (op->reg - M68K_REG_A0)); break;
 		case M68K_RI_ADDRESS : SStream_concat(O, "(a%d)", (op->reg - M68K_REG_A0)); break;
@@ -243,7 +261,6 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
 		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
 		case M68K_IMMIDIATE : SStream_concat(O, "#$%x", op->imm); break; 
-		case M68K_REG_BITS : registerBits(O, op); break;
 		case M68K_PCIIWI_8_BIT : 
 		{
 			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 

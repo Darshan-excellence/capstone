@@ -15,6 +15,8 @@ extern "C" {
 #pragma warning(disable:4201)
 #endif
 	
+#define M68K_OPERAND_COUNT 4
+	
 //> M68K registers
 typedef enum m68k_reg {
 	M68K_REG_INVALID = 0,
@@ -47,6 +49,8 @@ typedef enum m68k_reg {
 
 //> M68K Addressing Modes
 typedef enum m68k_adress_mode {
+	M68K_AM_NONE,				// No address mode. 
+
 	M68K_RD_DATA,				// Register Direct - Data
 	M68K_RD_ADDRESS,			// Register Direct - Address
 
@@ -73,9 +77,6 @@ typedef enum m68k_adress_mode {
 	M68K_ADA_LONG,				// Absolute Data Addressing  - Long
 	M68K_IMMIDIATE,				// Immidate value
 
-	M68K_REG_GEN,				// Register General (not really a adressing mode)
-	M68K_REG_BITS,				// Registes bits movem/cas2/etc (not really a adressing mode)
-
 } m68k_adress_mode; 
 
 //> Operand type for instruction's operands
@@ -85,6 +86,8 @@ typedef enum m68k_op_type {
 	M68K_OP_REG, // = CS_OP_REG (Register operand).
 	M68K_OP_IMM, // = CS_OP_IMM (Immediate operand).
 	M68K_OP_MEM, // = CS_OP_MEM (Memory operand).
+	M68K_OP_FP,  // = CS_OP_FP  (Floating-Point operand)
+	M68K_OP_REG_BITS, // Registes bits movem/cas2/etc
 } m68k_op_type;
 
 // Instruction's operand referring to memory
@@ -97,30 +100,31 @@ typedef struct m68k_op_mem {
 	uint32_t in_disp; // indirect displacement 
 	uint32_t out_disp; // outher displacement 
 	uint16_t disp;	// displacement value
-	uint16_t register_bits; // register bits for movem/cas2/etc (always in d0-d7 - a0-a7 order)
 	uint8_t scale;	// scale for index register
 	uint8_t bitfield; // set to true if the two values bellow should be used 
-	uint8_t  width;	// used for bf* instructions 
+	uint8_t width;	// used for bf* instructions 
 	uint8_t offset;	// used for bf* instructions
 	uint8_t index_size; // 0 = w, 1 = l
 } m68k_op_mem;
 
 // Instruction operand
 typedef struct cs_m68k_op {
-	m68k_adress_mode address_mode;	// addressing mode for
 	union {
 		uint64_t imm;		// immediate value for IMM operand
 		double fimm;
 		m68k_reg reg;	// register value for REG operand
 		m68k_op_mem mem;
+		uint16_t register_bits; // register bits for movem/cas2/etc (always in d0-d7 - a0-a7 order)
 	};
+	m68k_op_type type;
+	m68k_adress_mode address_mode;	// M68K addressing mode for this op 
 } cs_m68k_op;
 
 typedef struct cs_m68k
 {
 	// Number of operands of this instruction, 
 	// or 0 when instruction has no operand.
-	cs_m68k_op operands[4]; // operands for this instruction.
+	cs_m68k_op operands[M68K_OPERAND_COUNT]; // operands for this instruction.
 	uint8_t op_count;
 	uint8_t op_size;	// size of data operand works on in bytes (.b, .w, .l, etc)
 } cs_m68k;
