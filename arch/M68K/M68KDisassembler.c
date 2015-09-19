@@ -103,7 +103,10 @@ static const char* s_reg_names[] =
 	"invalid",
 	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-	"sr", "pc",
+	"pc",
+	"sr", "ccr", "sfc", "dfc", "usp", "vbr", "cacr",
+	"caar", "msp", "isp", "tc", "itt0", "itt1", "dtt0",
+	"dtt1", "mmusr", "urp", "srp",
 };
 
 static const char* s_instruction_names[] = {
@@ -407,7 +410,7 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
 
-	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68020);
+	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
 	printf("getInstruction: %p %d %p\n", (void*)address, s, s_disassemblyBuffer);
 
 	if (s == 0)

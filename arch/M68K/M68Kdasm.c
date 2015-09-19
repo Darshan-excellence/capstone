@@ -876,6 +876,18 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
  * al  : absolute long
  */
 
+static cs_m68k* build_init_op(int opcode, int count, int size)
+{
+	MCInst_setOpcode(g_inst, opcode);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = count;
+	info->op_size = size; 
+
+	return info;
+}
+
 // example "or.w    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_16(g_cpu_ir));
 
 static void build_re_gen_1(bool isDreg, int opcode, uint8_t size)
@@ -2859,118 +2871,145 @@ static void d68000_movea_32(void)
 
 static void d68000_move_to_ccr(void)
 {
-	sprintf(g_dasm_str, "move    %s, CCR", get_ea_mode_str_8(g_cpu_ir));
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	get_ea_mode_op(op0, g_cpu_ir, 1);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_CCR;
+
+	// sprintf(g_dasm_str, "move    %s, CCR", get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68010_move_fr_ccr(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	sprintf(g_dasm_str, "move    CCR, %s; (1+)", get_ea_mode_str_8(g_cpu_ir));
+
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_CCR;
+
+	get_ea_mode_op(op1, g_cpu_ir, 1);
+
+	//sprintf(g_dasm_str, "move    CCR, %s; (1+)", get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_move_fr_sr(void)
 {
-	sprintf(g_dasm_str, "move    SR, %s", get_ea_mode_str_16(g_cpu_ir));
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_SR;
+
+	get_ea_mode_op(op1, g_cpu_ir, 2);
+
+	// sprintf(g_dasm_str, "move    SR, %s", get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_move_to_sr(void)
 {
-	sprintf(g_dasm_str, "move    %s, SR", get_ea_mode_str_16(g_cpu_ir));
+	LIMIT_CPU_TYPES(M68010_PLUS);
+
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	get_ea_mode_op(op0, g_cpu_ir, 1);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_SR;
+
+	// sprintf(g_dasm_str, "move    %s, SR", get_ea_mode_str_16(g_cpu_ir));
 }
 
 static void d68000_move_fr_usp(void)
 {
-	sprintf(g_dasm_str, "move    USP, A%d", g_cpu_ir&7);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_USP;
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	// sprintf(g_dasm_str, "move    USP, A%d", g_cpu_ir&7);
 }
 
 static void d68000_move_to_usp(void)
 {
-	sprintf(g_dasm_str, "move    A%d, USP", g_cpu_ir&7);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_USP;
+
+	// sprintf(g_dasm_str, "move    A%d, USP", g_cpu_ir&7);
 }
 
 static void d68010_movec(void)
 {
-	uint extension;
-	char* reg_name;
-	char* processor;
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	extension = read_imm_16();
+	uint extension = read_imm_16();
+	m68k_reg reg = M68K_REG_INVALID;
 
-	switch(extension & 0xfff)
+	cs_m68k* info = build_init_op(M68K_INS_MOVEC, 2, 0);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	switch (extension & 0xfff)
 	{
-		case 0x000:
-			reg_name = "SFC";
-			processor = "1+";
-			break;
-		case 0x001:
-			reg_name = "DFC";
-			processor = "1+";
-			break;
-		case 0x800:
-			reg_name = "USP";
-			processor = "1+";
-			break;
-		case 0x801:
-			reg_name = "VBR";
-			processor = "1+";
-			break;
-		case 0x002:
-			reg_name = "CACR";
-			processor = "2+";
-			break;
-		case 0x802:
-			reg_name = "CAAR";
-			processor = "2,3";
-			break;
-		case 0x803:
-			reg_name = "MSP";
-			processor = "2+";
-			break;
-		case 0x804:
-			reg_name = "ISP";
-			processor = "2+";
-			break;
-		case 0x003:
-			reg_name = "TC";
-			processor = "4+";
-			break;
-		case 0x004:
-			reg_name = "ITT0";
-			processor = "4+";
-			break;
-		case 0x005:
-			reg_name = "ITT1";
-			processor = "4+";
-			break;
-		case 0x006:
-			reg_name = "DTT0";
-			processor = "4+";
-			break;
-		case 0x007:
-			reg_name = "DTT1";
-			processor = "4+";
-			break;
-		case 0x805:
-			reg_name = "MMUSR";
-			processor = "4+";
-			break;
-		case 0x806:
-			reg_name = "URP";
-			processor = "4+";
-			break;
-		case 0x807:
-			reg_name = "SRP";
-			processor = "4+";
-			break;
-		default:
-			reg_name = make_signed_hex_str_16(extension & 0xfff);
-			processor = "?";
+		case 0x000: reg = M68K_REG_SFC; break;
+		case 0x001: reg = M68K_REG_DFC; break;
+		case 0x800: reg = M68K_REG_USP; break;
+		case 0x801: reg = M68K_REG_VBR; break;
+		case 0x002: reg = M68K_REG_CACR; break;
+		case 0x802: reg = M68K_REG_CAAR; break;
+		case 0x803: reg = M68K_REG_MSP; break;
+		case 0x804: reg = M68K_REG_ISP; break;
+		case 0x003: reg = M68K_REG_TC; break;
+		case 0x004: reg = M68K_REG_ITT0; break;
+		case 0x005: reg = M68K_REG_ITT1; break;
+		case 0x006: reg = M68K_REG_DTT0; break;
+		case 0x007: reg = M68K_REG_DTT1; break;
+		case 0x805: reg = M68K_REG_MMUSR; break;
+		case 0x806: reg = M68K_REG_URP; break;
+		case 0x807: reg = M68K_REG_SRP; break;
 	}
 
-	if(BIT_1(g_cpu_ir))
+	if (BIT_1(g_cpu_ir)) {
+		op0->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
+		op1->reg = reg; 
+	} else {
+		op0->reg = reg; 
+		op1->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
+	}
+
+	/*
+	if (BIT_1(g_cpu_ir))
 		sprintf(g_dasm_str, "movec %c%d, %s; (%s)", BIT_F(extension) ? 'A' : 'D', (extension>>12)&7, reg_name, processor);
 	else
 		sprintf(g_dasm_str, "movec %s, %c%d; (%s)", reg_name, BIT_F(extension) ? 'A' : 'D', (extension>>12)&7, processor);
+	*/
 }
 
 static void d68000_movem_pd_16(void)
