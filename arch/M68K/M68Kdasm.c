@@ -217,41 +217,24 @@ static uint g_5bit_data_table[32] =
 static char* g_cc[16] = { "t", "f", "hi", "ls", "cc", "cs", "ne", "eq", "vc", "vs", "pl", "mi", "ge", "lt", "gt", "le" };
 
 static m68k_insn s_branch_lut[] = {
-	M68K_INS_INVALID,
-	M68K_INS_INVALID,
-	M68K_INS_BHI,
-	M68K_INS_BLS,
-	M68K_INS_BCC,
-	M68K_INS_BCS,
-	M68K_INS_BNE,
-	M68K_INS_BEQ,
-	M68K_INS_BVC,
-	M68K_INS_BVS,
-	M68K_INS_BPL,
-	M68K_INS_BMI,
-	M68K_INS_BGE,
-	M68K_INS_BLT,
-	M68K_INS_BGT,
-	M68K_INS_BLE,
+	M68K_INS_INVALID, M68K_INS_INVALID, M68K_INS_BHI, M68K_INS_BLS,
+	M68K_INS_BCC, M68K_INS_BCS, M68K_INS_BNE, M68K_INS_BEQ,
+	M68K_INS_BVC, M68K_INS_BVS, M68K_INS_BPL, M68K_INS_BMI,
+	M68K_INS_BGE, M68K_INS_BLT, M68K_INS_BGT, M68K_INS_BLE,
 };
 
 static m68k_insn s_dbcc_lut[] = {
-	M68K_INS_DBT,
-	M68K_INS_DBF,
-	M68K_INS_DBHI,
-	M68K_INS_DBLS,
-	M68K_INS_DBCC,
-	M68K_INS_DBCS,
-	M68K_INS_DBNE,
-	M68K_INS_DBEQ,
-	M68K_INS_DBVC,
-	M68K_INS_DBVS,
-	M68K_INS_DBPL,
-	M68K_INS_DBMI,
-	M68K_INS_DBGE,
-	M68K_INS_DBLT,
-	M68K_INS_DBGT,
-	M68K_INS_DBLE,
+	M68K_INS_DBT, M68K_INS_DBF, M68K_INS_DBHI, M68K_INS_DBLS,
+	M68K_INS_DBCC, M68K_INS_DBCS, M68K_INS_DBNE, M68K_INS_DBEQ,
+	M68K_INS_DBVC, M68K_INS_DBVS, M68K_INS_DBPL, M68K_INS_DBMI,
+	M68K_INS_DBGE, M68K_INS_DBLT, M68K_INS_DBGT, M68K_INS_DBLE,
+};
+
+static m68k_insn s_scc_lut[] = {
+	M68K_INS_ST, M68K_INS_SF, M68K_INS_SHI, M68K_INS_SLS,
+	M68K_INS_SCC, M68K_INS_SCS, M68K_INS_SNE, M68K_INS_SEQ,
+	M68K_INS_SVC, M68K_INS_SVS, M68K_INS_SPL, M68K_INS_SMI,
+	M68K_INS_SGE, M68K_INS_SLT, M68K_INS_SGT, M68K_INS_SLE,
 };
 
 
@@ -3746,7 +3729,15 @@ static void d68000_sbcd_mm(void)
 
 static void d68000_scc(void)
 {
-	sprintf(g_dasm_str, "s%-2s     %s", g_cc[(g_cpu_ir>>8)&0xf], get_ea_mode_str_8(g_cpu_ir));
+	MCInst_setOpcode(g_inst, s_scc_lut[(g_cpu_ir >> 8) & 0xf]);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 1;
+	info->op_size = 1;
+
+	get_ea_mode_op(&info->operands[0], g_cpu_ir, 1);
+	//sprintf(g_dasm_str, "s%-2s     %s", g_cc[(g_cpu_ir>>8)&0xf], get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68000_stop(void)
