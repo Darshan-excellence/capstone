@@ -2516,16 +2516,46 @@ static void d68000_divu(void)
 
 static void d68020_divl(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
 
-	if(BIT_A(extension))
-		sprintf(g_dasm_str, "div%c.l  %s, D%d:D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), extension&7, (extension>>12)&7);
-	else if((extension&7) == ((extension>>12)&7))
-		sprintf(g_dasm_str, "div%c.l  %s, D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), (extension>>12)&7);
+	uint extension = read_imm_16();
+
+	if (BIT_B((extension)))
+		MCInst_setOpcode(g_inst, M68K_INS_DIVS);
 	else
+		MCInst_setOpcode(g_inst, M68K_INS_DIVU);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 4; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	get_ea_mode_op(op0, g_cpu_ir, 4);
+
+	const uint reg_0 = extension & 7;
+	const uint reg_1 = (extension >> 12) & 7;
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->type = M68K_OP_REG_PAIR;
+	op1->register_bits = (reg_0 << 4) | reg_1; 
+
+	if (reg_0 == reg_1) {
+		op1->type = M68K_OP_REG;
+		op1->reg = M68K_REG_D0 + reg_0;
+	}
+
+	/*
+	if (BIT_A(extension)) {
+		sprintf(g_dasm_str, "div%c.l  %s, D%d:D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), extension&7, (extension>>12)&7);
+	} else if((extension&7) == ((extension>>12)&7)) {
+		sprintf(g_dasm_str, "div%c.l  %s, D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), (extension>>12)&7);
+	} else {
 		sprintf(g_dasm_str, "div%cl.l %s, D%d:D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), extension&7, (extension>>12)&7);
+	}
+	*/
 }
 
 static void d68000_eor_8(void)
@@ -3292,14 +3322,43 @@ static void d68000_mulu(void)
 
 static void d68020_mull(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
 
+	uint extension = read_imm_16();
+
+	if (BIT_B((extension)))
+		MCInst_setOpcode(g_inst, M68K_INS_MULS);
+	else
+		MCInst_setOpcode(g_inst, M68K_INS_MULU);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 4; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	get_ea_mode_op(op0, g_cpu_ir, 4);
+
+	const uint reg_0 = extension & 7;
+	const uint reg_1 = (extension >> 12) & 7;
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->type = M68K_OP_REG_PAIR;
+	op1->register_bits = (reg_0 << 4) | reg_1; 
+
+	if (!BIT_A(extension)) {
+		op1->type = M68K_OP_REG;
+		op1->reg = M68K_REG_D0 + reg_0;
+	}
+
+/*
 	if(BIT_A(extension))
 		sprintf(g_dasm_str, "mul%c.l %s, D%d-D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), extension&7, (extension>>12)&7);
 	else
 		sprintf(g_dasm_str, "mul%c.l  %s, D%d; (2+)", BIT_B(extension) ? 's' : 'u', get_ea_mode_str_32(g_cpu_ir), (extension>>12)&7);
+*/
 }
 
 static void d68000_nbcd(void)
