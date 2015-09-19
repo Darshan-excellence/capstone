@@ -1425,6 +1425,35 @@ static void build_chk2_cmp2(int size)
 	op1->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
 }
 
+static void build_move16(int data[2], int modes[2])
+{
+	MCInst_setOpcode(g_inst, M68K_INS_MOVE16);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 2;
+	info->op_size = 0; 
+
+	for (int i = 0; i < 2; ++i)
+	{
+		cs_m68k_op* op = &info->operands[i];
+		op->type = M68K_OP_MEM;
+
+		const int d = data[i]; 
+		const int m = modes[i]; 
+
+		if (m == M68K_RI_ADDRESS_PI || m == M68K_RI_ADDRESS) {
+			op->address_mode = m;
+			op->reg = M68K_REG_A0 + d;
+		} else {
+			op->address_mode = m;
+			op->imm = d; 
+		}
+	}
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -3274,32 +3303,61 @@ static void d68000_moveq(void)
 static void d68040_move16_pi_pi(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	build_pi_pi(M68K_INS_MOVE16, 0);
+
+	int data[] = { g_cpu_ir & 7, (read_imm_16() >> 12) & 7 };
+	int modes[] = { M68K_RI_ADDRESS_PI, M68K_RI_ADDRESS_PI };
+
+	build_move16(data, modes);
+
 	//sprintf(g_dasm_str, "move16  (A%d)+, (A%d)+; (4)", g_cpu_ir&7, (read_imm_16()>>12)&7);
 }
 
 static void d68040_move16_pi_al(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	sprintf(g_dasm_str, "move16  (A%d)+, %s; (4)", g_cpu_ir&7, get_imm_str_u32());
+
+	int data[] = { g_cpu_ir & 7, read_imm_32() };
+	int modes[] = { M68K_RI_ADDRESS_PI, M68K_ADA_LONG };
+
+	build_move16(data, modes);
+
+	//sprintf(g_dasm_str, "move16  (A%d)+, %s; (4)", g_cpu_ir&7, get_imm_str_u32());
 }
 
 static void d68040_move16_al_pi(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	sprintf(g_dasm_str, "move16  %s, (A%d)+; (4)", get_imm_str_u32(), g_cpu_ir&7);
+
+	int data[] = { read_imm_32(), g_cpu_ir & 7 };
+	int modes[] = { M68K_ADA_LONG, M68K_RI_ADDRESS_PI };
+
+	build_move16(data, modes);
+
+	//sprintf(g_dasm_str, "move16  %s, (A%d)+; (4)", get_imm_str_u32(), g_cpu_ir&7);
 }
 
 static void d68040_move16_ai_al(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	sprintf(g_dasm_str, "move16  (A%d), %s; (4)", g_cpu_ir&7, get_imm_str_u32());
+
+	int data[] = { g_cpu_ir & 7, read_imm_32() };
+	int modes[] = { M68K_RI_ADDRESS, M68K_ADA_LONG };
+
+	build_move16(data, modes);
+
+	//sprintf(g_dasm_str, "move16  (A%d), %s; (4)", g_cpu_ir&7, get_imm_str_u32());
 }
 
 static void d68040_move16_al_ai(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	sprintf(g_dasm_str, "move16  %s, (A%d); (4)", get_imm_str_u32(), g_cpu_ir&7);
+
+	int data[] = { read_imm_32(), g_cpu_ir & 7 };
+	int modes[] = { M68K_ADA_LONG, M68K_RI_ADDRESS };
+
+	build_move16(data, modes);
+
+	//sprintf(g_dasm_str, "move16  %s, (A%d); (4)", get_imm_str_u32(), g_cpu_ir&7);
 }
 
 static void d68000_muls(void)
