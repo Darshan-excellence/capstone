@@ -1529,6 +1529,38 @@ static void build_cpush_cinv(int op_offset)
 	}
 }
 
+static void build_movep_re(int size)
+{
+	cs_m68k* info = build_init_op(M68K_INS_MOVEP, 2, size);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
+
+	op1->address_mode = M68K_RI_ADDRESS_D;
+	op1->type = M68K_OP_MEM;
+	op1->mem.base_reg = M68K_REG_A0 + (g_cpu_ir & 7); 
+	op1->mem.disp = read_imm_16();
+
+	// sprintf(g_dasm_str, "movep.w D%d, ($%x,A%d)", (g_cpu_ir>>9)&7, read_imm_16(), g_cpu_ir&7);
+}
+
+static void build_movep_er(int size)
+{
+	cs_m68k* info = build_init_op(M68K_INS_MOVEP, 2, size);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_RI_ADDRESS_D;
+	op0->type = M68K_OP_MEM;
+	op0->mem.base_reg = M68K_REG_A0 + (g_cpu_ir & 7); 
+	op0->mem.disp = read_imm_16();
+
+	op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -3328,22 +3360,26 @@ static void d68000_movem_re_32(void)
 
 static void d68000_movep_re_16(void)
 {
-	sprintf(g_dasm_str, "movep.w D%d, ($%x,A%d)", (g_cpu_ir>>9)&7, read_imm_16(), g_cpu_ir&7);
+	build_movep_re(2);
+	//sprintf(g_dasm_str, "movep.w D%d, ($%x,A%d)", (g_cpu_ir>>9)&7, read_imm_16(), g_cpu_ir&7);
 }
 
 static void d68000_movep_re_32(void)
 {
-	sprintf(g_dasm_str, "movep.l D%d, ($%x,A%d)", (g_cpu_ir>>9)&7, read_imm_16(), g_cpu_ir&7);
+	build_movep_re(4);
+	//sprintf(g_dasm_str, "movep.l D%d, ($%x,A%d)", (g_cpu_ir>>9)&7, read_imm_16(), g_cpu_ir&7);
 }
 
 static void d68000_movep_er_16(void)
 {
-	sprintf(g_dasm_str, "movep.w ($%x,A%d), D%d", read_imm_16(), g_cpu_ir&7, (g_cpu_ir>>9)&7);
+	build_movep_er(2);
+	//sprintf(g_dasm_str, "movep.w ($%x,A%d), D%d", read_imm_16(), g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
 
 static void d68000_movep_er_32(void)
 {
-	sprintf(g_dasm_str, "movep.l ($%x,A%d), D%d", read_imm_16(), g_cpu_ir&7, (g_cpu_ir>>9)&7);
+	build_movep_er(4);
+	//sprintf(g_dasm_str, "movep.l ($%x,A%d), D%d", read_imm_16(), g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
 
 static void d68010_moves_8(void)
