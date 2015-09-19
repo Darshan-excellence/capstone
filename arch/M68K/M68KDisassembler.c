@@ -103,6 +103,7 @@ static const char* s_reg_names[] =
 	"invalid",
 	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+	"fp0", "fp1", "fp2", "fp3", "fp4", "fp5", "fp6", "fp7",
 	"pc",
 	"sr", "ccr", "sfc", "dfc", "usp", "vbr", "cacr",
 	"caar", "msp", "isp", "tc", "itt0", "itt1", "dtt0",

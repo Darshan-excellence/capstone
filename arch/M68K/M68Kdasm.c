@@ -1378,7 +1378,7 @@ static void build_illegal(int data)
 	info->op_count = 1;
 	info->op_size = 0; 
 
-	op->address_mode = M68K_AM_NONE;
+	op->address_mode = M68K_IMMIDIATE;
 	op->type = M68K_OP_IMM;
 	op->imm = data;
 }
@@ -1595,12 +1595,115 @@ static void d68000_illegal(void)
 	//sprintf(g_dasm_str, "dc.w $%04x; ILLEGAL", g_cpu_ir);
 }
 
+static void fpu_alu_op(int next)
+{
+	int rm = (next >> 14) & 0x1;
+	int src = (next >> 10) & 0x7;
+	int dst = (next >> 7) & 0x7;
+
+	switch (next & 0x7f)
+	{
+		case 0x00: MCInst_setOpcode(g_inst, M68K_INS_FMOVE); break;
+		case 0x01: MCInst_setOpcode(g_inst, M68K_INS_FINT); break;
+		case 0x03: MCInst_setOpcode(g_inst, M68K_INS_FINTRZ); break;
+		case 0x04: MCInst_setOpcode(g_inst, M68K_INS_FSQRT); break;
+		case 0x06: MCInst_setOpcode(g_inst, M68K_INS_FLOGNP1); break;
+		case 0x0e: MCInst_setOpcode(g_inst, M68K_INS_FSIN); break;
+		case 0x0f: MCInst_setOpcode(g_inst, M68K_INS_FTAN); break;
+		case 0x14: MCInst_setOpcode(g_inst, M68K_INS_FLOGN); break;
+		case 0x15: MCInst_setOpcode(g_inst, M68K_INS_FLOG10); break;
+		case 0x16: MCInst_setOpcode(g_inst, M68K_INS_FLOG2); break;
+		case 0x18: MCInst_setOpcode(g_inst, M68K_INS_FABS); break;
+		case 0x1a: MCInst_setOpcode(g_inst, M68K_INS_FNEG); break;
+		case 0x1d: MCInst_setOpcode(g_inst, M68K_INS_FCOS); break;
+		case 0x1e: MCInst_setOpcode(g_inst, M68K_INS_FGETEXP); break;
+		case 0x20: MCInst_setOpcode(g_inst, M68K_INS_FDIV); break;
+		case 0x22: MCInst_setOpcode(g_inst, M68K_INS_FADD); break;
+		case 0x23: MCInst_setOpcode(g_inst, M68K_INS_FMUL); break;
+		case 0x24: MCInst_setOpcode(g_inst, M68K_INS_FSGLDIV); break;
+		case 0x25: MCInst_setOpcode(g_inst, M68K_INS_FREM); break;
+		case 0x27: MCInst_setOpcode(g_inst, M68K_INS_FSGLMUL); break;
+		case 0x28: MCInst_setOpcode(g_inst, M68K_INS_FSUB); break;
+		case 0x38: MCInst_setOpcode(g_inst, M68K_INS_FCMP); break;
+		case 0x3a: MCInst_setOpcode(g_inst, M68K_INS_FTST); break;
+		default:	
+			break;
+	}
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 0; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	if (rm == 1) {
+		// TODO: Use size here
+		get_ea_mode_op(op0, g_cpu_ir, 4);
+	} else {
+		op0->reg = M68K_REG_FP0 + src; 
+	}
+
+	op1->reg = M68K_REG_FP0 + dst;
+	//printf("rm %d - src %d - dst %d\n", rm, src, dst);
+}
+
+// FPU decoding
+
+static void d68000_fpu(void)
+{
+	LIMIT_CPU_TYPES(M68040_PLUS);
+
+	// figure out the type of instruction
+
+	switch ((g_cpu_ir >> 6) & 3)
+	{
+		case 0:
+		{
+			uint next = read_imm_16();
+
+			switch ((next >> 13) & 0x7)
+			{
+				case 0: 
+				case 2:
+				{
+					fpu_alu_op(next);
+					break;
+				}
+			}
+
+			break;
+		}
+
+		case 1:
+		{
+			printf("fbcc 16\n");
+			break;
+		}
+
+		case 2:		// FBcc disp16
+		{
+			printf("fbcc 16\n");
+			break;
+		}
+		case 3:		// FBcc disp32
+		{
+			printf("fbcc 32\n");
+			break;
+		}
+
+		default:	
+			build_illegal((g_cpu_ir >> 6) & 0x3);
+	}
+}
+
+
 static void d68000_1010(void)
 {
 	build_illegal(g_cpu_ir);
 	//sprintf(g_dasm_str, "dc.w    $%04x; opcode 1010", g_cpu_ir);
 }
-
 
 static void d68000_1111(void)
 {
@@ -4277,6 +4380,7 @@ static void d68020_unpk_mm(void)
 static opcode_struct g_opcode_info[] =
 {
 /*  opcode handler    mask    match   ea mask */
+	{d68000_fpu          , 0xffff, 0xf200, 0x000},
 	{d68000_1010         , 0xf000, 0xa000, 0x000},
 	{d68000_1111         , 0xf000, 0xf000, 0x000},
 	{d68000_abcd_rr      , 0xf1f8, 0xc100, 0x000},
