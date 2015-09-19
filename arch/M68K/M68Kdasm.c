@@ -1362,6 +1362,21 @@ static void build_movem_er(int opcode, int size)
 	op1->register_bits = read_imm_16(); 
 }
 
+static void build_illegal(int data)
+{
+	MCInst_setOpcode(g_inst, M68K_INS_ILLEGAL);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op = &info->operands[0];
+
+	info->op_count = 1;
+	info->op_size = 0; 
+
+	op->address_mode = M68K_AM_NONE;
+	op->type = M68K_OP_IMM;
+	op->imm = data;
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -1374,18 +1389,21 @@ static void build_er_a_1(int opcode, uint8_t size)
 
 static void d68000_illegal(void)
 {
-	sprintf(g_dasm_str, "dc.w $%04x; ILLEGAL", g_cpu_ir);
+	build_illegal(g_cpu_ir);
+	//sprintf(g_dasm_str, "dc.w $%04x; ILLEGAL", g_cpu_ir);
 }
 
 static void d68000_1010(void)
 {
-	sprintf(g_dasm_str, "dc.w    $%04x; opcode 1010", g_cpu_ir);
+	build_illegal(g_cpu_ir);
+	//sprintf(g_dasm_str, "dc.w    $%04x; opcode 1010", g_cpu_ir);
 }
 
 
 static void d68000_1111(void)
 {
-	sprintf(g_dasm_str, "dc.w    $%04x; opcode 1111", g_cpu_ir);
+	build_illegal(g_cpu_ir);
+	//sprintf(g_dasm_str, "dc.w    $%04x; opcode 1111", g_cpu_ir);
 }
 
 
