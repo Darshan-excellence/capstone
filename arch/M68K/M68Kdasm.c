@@ -2333,26 +2333,34 @@ static void d68000_cmpm_32(void)
 
 static void d68020_cpbcc_16(void)
 {
+	build_illegal(g_cpu_ir);
+	/*
 	uint extension;
 	uint new_pc = g_cpu_pc;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension = read_imm_16();
 	new_pc += make_int_16(peek_imm_16());
 	sprintf(g_dasm_str, "%db%-4s  %s; %x (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[g_cpu_ir&0x3f], get_imm_str_s16(), new_pc, extension);
+	*/
 }
 
 static void d68020_cpbcc_32(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension;
 	uint new_pc = g_cpu_pc;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension = read_imm_16();
 	new_pc += peek_imm_32();
 	sprintf(g_dasm_str, "%db%-4s  %s; %x (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[g_cpu_ir&0x3f], get_imm_str_s16(), new_pc, extension);
+*/
 }
 
 static void d68020_cpdbcc(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension1;
 	uint extension2;
 	uint new_pc = g_cpu_pc;
@@ -2361,64 +2369,80 @@ static void d68020_cpdbcc(void)
 	extension2 = read_imm_16();
 	new_pc += make_int_16(peek_imm_16());
 	sprintf(g_dasm_str, "%ddb%-4s D%d,%s; %x (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], g_cpu_ir&7, get_imm_str_s16(), new_pc, extension2);
+*/
 }
 
 static void d68020_cpgen(void)
 {
-	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "%dgen    %s; (2-3)", (g_cpu_ir>>9)&7, get_imm_str_u32());
+	build_illegal(g_cpu_ir);
+	//LIMIT_CPU_TYPES(M68020_PLUS);
+	//sprintf(g_dasm_str, "%dgen    %s; (2-3)", (g_cpu_ir>>9)&7, get_imm_str_u32());
 }
 
 static void d68020_cprestore(void)
 {
-	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "%drestore %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_illegal(g_cpu_ir);
+	//LIMIT_CPU_TYPES(M68020_PLUS);
+	//sprintf(g_dasm_str, "%drestore %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cpsave(void)
 {
-	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "%dsave   %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
+	build_illegal(g_cpu_ir);
+	//LIMIT_CPU_TYPES(M68020_PLUS);
+	//sprintf(g_dasm_str, "%dsave   %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cpscc(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension1;
 	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension1 = read_imm_16();
 	extension2 = read_imm_16();
 	sprintf(g_dasm_str, "%ds%-4s  %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_ea_mode_str_8(g_cpu_ir), extension2);
+*/
 }
 
 static void d68020_cptrapcc_0(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension1;
 	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension1 = read_imm_16();
 	extension2 = read_imm_16();
 	sprintf(g_dasm_str, "%dtrap%-4s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], extension2);
+*/
 }
 
 static void d68020_cptrapcc_16(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension1;
 	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension1 = read_imm_16();
 	extension2 = read_imm_16();
 	sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u16(), extension2);
+*/
 }
 
 static void d68020_cptrapcc_32(void)
 {
+	build_illegal(g_cpu_ir);
+/*
 	uint extension1;
 	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension1 = read_imm_16();
 	extension2 = read_imm_16();
 	sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u32(), extension2);
+*/
 }
 
 static void d68040_cpush(void)
@@ -2632,7 +2656,8 @@ static void d68000_lsr_r_32(void)
 
 static void d68000_lsr_ea(void)
 {
-	sprintf(g_dasm_str, "lsr.w   %s", get_ea_mode_str_32(g_cpu_ir));
+	build_ea(M68K_INS_LSR, 2);
+	//sprintf(g_dasm_str, "lsr.w   %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_lsl_s_8(void)
@@ -2673,7 +2698,8 @@ static void d68000_lsl_r_32(void)
 
 static void d68000_lsl_ea(void)
 {
-	sprintf(g_dasm_str, "lsl.w   %s", get_ea_mode_str_32(g_cpu_ir));
+	build_ea(M68K_INS_LSL, 2);
+	//sprintf(g_dasm_str, "lsl.w   %s", get_ea_mode_str_32(g_cpu_ir));
 }
 
 static void d68000_move_8(void)
