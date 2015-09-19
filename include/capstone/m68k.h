@@ -87,7 +87,8 @@ typedef enum m68k_op_type {
 	M68K_OP_IMM, // = CS_OP_IMM (Immediate operand).
 	M68K_OP_MEM, // = CS_OP_MEM (Memory operand).
 	M68K_OP_FP,  // = CS_OP_FP  (Floating-Point operand)
-	M68K_OP_REG_BITS, // Registes bits movem/cas2/etc
+	M68K_OP_REG_BITS, // Registes bits movem
+	M68K_OP_REG_PAIR, // Register pair in the same op (upper 4 bits for first reg, lower for second) 
 } m68k_op_type;
 
 // Instruction's operand referring to memory

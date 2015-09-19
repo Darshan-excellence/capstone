@@ -1377,6 +1377,37 @@ static void build_illegal(int data)
 	op->imm = data;
 }
 
+static void build_cas2(int size)
+{
+	MCInst_setOpcode(g_inst, M68K_INS_CAS2);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	cs_m68k_op* op2 = &info->operands[2];
+
+	info->op_count = 3;
+	info->op_size = size; 
+
+	uint extension = read_imm_32();
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->type = M68K_OP_REG_PAIR;
+	op0->register_bits = (((extension >> 16) & 7) << 4) | (extension & 7);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->type = M68K_OP_REG_PAIR;
+	op1->register_bits = (((extension >> 22) & 7) << 4) | ((extension >> 6) & 7);
+
+	const int reg_0 = (extension >> 28) & 7;
+	const int reg_1 = (extension >> 12) & 7;
+
+	op2->address_mode = M68K_AM_NONE;
+	op2->type = M68K_OP_REG_PAIR;
+	op2->register_bits = ((reg_0 + (BIT_1F(extension) ? 8 : 0)) << 4) |
+						  (reg_1 + (BIT_F(extension) ? 8 : 0));
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2043,6 +2074,7 @@ static void d68020_cas_8(void)
 
 static void d68020_cas_16(void)
 {
+	
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	build_d_d_ea(M68K_INS_CAS, 2);
 	//sprintf(g_dasm_str, "cas.w   D%d, D%d, %s; (2+)", extension&7, (extension>>8)&7, get_ea_mode_str_16(g_cpu_ir));
@@ -2063,24 +2095,30 @@ f e d c b a 9 8 7 6 5 4 3 2 1 0
  DARn2  0 0 0  Du2  0 0 0  Dc2
 */
 
+	build_cas2(2);
+/*
 	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension = read_imm_32();
-	sprintf(g_dasm_str, "cas2.w  D%d:D%d:D%d:D%d, (%c%d):(%c%d); (2+)",
+	sprintf(g_dasm_str, "cas2.w  D%d:D%d, D%d:D%d, (%c%d):(%c%d); (2+)",
 		(extension>>16)&7, extension&7, (extension>>22)&7, (extension>>6)&7,
 		BIT_1F(extension) ? 'A' : 'D', (extension>>28)&7,
 		BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+*/
 }
 
 static void d68020_cas2_32(void)
 {
+	build_cas2(4);
+/*
 	uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension = read_imm_32();
-	sprintf(g_dasm_str, "cas2.l  D%d:D%d:D%d:D%d, (%c%d):(%c%d); (2+)",
+	sprintf(g_dasm_str, "cas2.l  D%d:D%d, D%d:D%d, (%c%d):(%c%d); (2+)",
 		(extension>>16)&7, extension&7, (extension>>22)&7, (extension>>6)&7,
 		BIT_1F(extension) ? 'A' : 'D', (extension>>28)&7,
 		BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+*/
 }
 
 static void d68000_chk_16(void)

@@ -228,6 +228,15 @@ static void registerBits(SStream* O, const cs_m68k_op* op)
 	SStream_concat(O, "%s", buffer);
 }
 
+static void registerPair(SStream* O, const cs_m68k_op* op)
+{
+	int reg_value_0 = op->register_bits >> 4;
+	int reg_value_1 = op->register_bits & 0xf;
+
+	SStream_concat(O, "%s:%s", s_reg_names[M68K_REG_D0 + (op->register_bits >> 4)], 
+							   s_reg_names[M68K_REG_D0 + (op->register_bits & 0xf)]);
+}
+
 void printAddressingMode(SStream* O, const cs_m68k_op* op)
 {
 	switch (op->address_mode)
@@ -239,6 +248,12 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 				case M68K_OP_REG_BITS:
 				{
 					registerBits(O, op);
+					break;
+				}
+
+				case M68K_OP_REG_PAIR:
+				{
+					registerPair(O, op);
 					break;
 				}
 
@@ -343,6 +358,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	const int op_count = info->op_count;
 
+
 	SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
 
 	switch (info->op_size)
@@ -353,6 +369,21 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 	}
 
 	SStream_concat0(O, " ");
+
+	// this one is a bit spacial so we do spacial things
+
+	if (MI->Opcode == M68K_INS_CAS2)
+	{
+		printAddressingMode(O, &info->operands[0]); SStream_concat0(O, ",");
+		printAddressingMode(O, &info->operands[1]); SStream_concat0(O, ",");
+
+		int reg_value_0 = info->operands[2].register_bits >> 4;
+		int reg_value_1 = info->operands[2].register_bits & 0xf;
+
+		SStream_concat(O, "(%s):(%s)", s_reg_names[M68K_REG_D0 + reg_value_0], s_reg_names[M68K_REG_D0 + reg_value_1]); 
+
+		return;
+	}
 
 	for (int i  = 0; i < op_count; ++i)
 	{
@@ -370,7 +401,7 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
 
-	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
+	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68020);
 	printf("getInstruction: %p %d %p\n", (void*)address, s, s_disassemblyBuffer);
 
 	if (s == 0)
