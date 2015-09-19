@@ -237,6 +237,12 @@ static m68k_insn s_scc_lut[] = {
 	M68K_INS_SGE, M68K_INS_SLT, M68K_INS_SGT, M68K_INS_SLE,
 };
 
+static m68k_insn s_trap_lut[] = {
+	M68K_INS_TRAPT, M68K_INS_TRAPF, M68K_INS_TRAPHI, M68K_INS_TRAPLS,
+	M68K_INS_TRAPCC, M68K_INS_TRAPCS, M68K_INS_TRAPNE, M68K_INS_TRAPEQ,
+	M68K_INS_TRAPVC, M68K_INS_TRAPVS, M68K_INS_TRAPPL, M68K_INS_TRAPMI,
+	M68K_INS_TRAPGE, M68K_INS_TRAPLT, M68K_INS_TRAPGT, M68K_INS_TRAPLE,
+};
 
 static char* g_cpcc[64] =
 {/* 000    001    010    011    100    101    110    111 */
@@ -1193,6 +1199,11 @@ static void build_bxx(int opcode, int size, int jump_offset)
 static void build_bcc(int size, int jump_offset)
 {
 	build_bxx(s_branch_lut[(g_cpu_ir >> 8) & 0xf], size, jump_offset);
+}
+
+static void build_trap(int size, int jump_offset)
+{
+	build_bxx(s_trap_lut[(g_cpu_ir >> 8) & 0xf], size, jump_offset);
 }
 
 static void build_dbxx(int opcode, int size, int jump_offset)
@@ -3887,19 +3898,24 @@ static void d68000_trap(void)
 static void d68020_trapcc_0(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "trap%-2s; (2+)", g_cc[(g_cpu_ir>>8)&0xf]);
+	build_trap(0, 0);
+
+	g_inst->flat_insn->detail->m68k.op_count = 0;
+	//sprintf(g_dasm_str, "trap%-2s; (2+)", g_cc[(g_cpu_ir>>8)&0xf]);
 }
 
 static void d68020_trapcc_16(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "trap%-2s  %s; (2+)", g_cc[(g_cpu_ir>>8)&0xf], get_imm_str_u16());
+	build_trap(2, read_imm_16());
+	//sprintf(g_dasm_str, "trap%-2s  %s; (2+)", g_cc[(g_cpu_ir>>8)&0xf], get_imm_str_u16());
 }
 
 static void d68020_trapcc_32(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "trap%-2s  %s; (2+)", g_cc[(g_cpu_ir>>8)&0xf], get_imm_str_u32());
+	build_trap(4, read_imm_32());
+	//sprintf(g_dasm_str, "trap%-2s  %s; (2+)", g_cc[(g_cpu_ir>>8)&0xf], get_imm_str_u32());
 }
 
 static void d68000_trapv(void)
