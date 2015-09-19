@@ -110,7 +110,7 @@ static const char* s_instruction_names[] = {
 	"invalid",
 	"abcd", "add", "adda", "addi", "addq", "addx", "and", "andi", "asl", "asr", "bhs", "blo", "bhi", "bls", "bcc", "bcs", "bne", "beq", "bvc",
 	"bvs", "bpl", "bmi", "bge", "blt", "bgt", "ble", "bra", "bsr", "bchg", "bclr", "bset", "btst", "bfchg", "bfclr", "bfexts", "bfextu", "bfffo", "bfins",
-	"bfset", "bftst", "bkpt", "cas", "cas2", "chk", "chk2", "clr", "cmp", "cmpa", "cmpi", "cmpm", "cmp2", "cinvl", "cinvp", "cinva", "cpushl", "cpushp",
+	"bfset", "bftst", "bkpt", "callm", "cas", "cas2", "chk", "chk2", "clr", "cmp", "cmpa", "cmpi", "cmpm", "cmp2", "cinvl", "cinvp", "cinva", "cpushl", "cpushp",
 	"cpusha", "dbt", "dbf", "dbhi", "dbls", "dbcc", "dbcs", "dbne", "dbeq", "dbvc", "dbvs", "dbpl", "dbmi", "dbge", "dblt", "dbgt", "dble", "dbra",
 	"divs", "divsl", "divu", "divul", "eor", "eori", "exg", "ext", "extb", "fabs", "fsabs", "fdabs", "facos", "fadd", "fsadd", "fdadd", "fasin",
 	"fatan", "fatanh", "fbf", "fbeq", "fbogt", "fboge", "fbolt", "fbole", "fbogl", "fbor", "fbun", "fbueq", "fbugt", "fbuge", "fbult", "fbule", "fbne", "fbt",
@@ -154,7 +154,6 @@ unsigned int m68k_read_disassembler_8(uint64_t address)
 unsigned int m68k_read_disassembler_16(uint64_t address)
 {
 	address -= s_baseAddress;
-
 
 	uint16_t v0 = s_disassemblyBuffer[address + 0];
 	uint16_t v1 = s_disassemblyBuffer[address + 1];
@@ -371,20 +370,27 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
 
-
 	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68000);
 	printf("getInstruction: %p %d %p\n", (void*)address, s, s_disassemblyBuffer);
 
-	
-	
 	if (s == 0)
+	{
+		*size = 2;
 		return false;
-
+	}
 
 	SStream ss;
 	SStream_Init(&ss);
 	M68K_printInst(instr, &ss, info);
 	printf("%s\n", ss.buffer);
+
+	// Make sure we always stay within range 
+
+	if (s > code_len)
+	{
+		*size = code_len;
+		return true;
+	}
 
 	*size = (uint16_t)s;
 

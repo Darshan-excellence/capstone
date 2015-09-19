@@ -2026,11 +2026,11 @@ static void d68000_btst_s(void)
 
 static void d68020_callm(void)
 {
-	char* str;
 	LIMIT_CPU_TYPES(M68020_ONLY);
-	str = get_imm_str_u8();
 
-	sprintf(g_dasm_str, "callm   %s, %s; (2)", str, get_ea_mode_str_8(g_cpu_ir));
+	build_imm_ea(M68K_INS_CALLM, 0, read_imm_8());
+	//str = get_imm_str_u8();
+	//sprintf(g_dasm_str, "callm   %s, %s; (2)", str, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cas_8(void)
