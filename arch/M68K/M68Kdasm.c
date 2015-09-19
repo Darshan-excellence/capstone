@@ -2632,18 +2632,50 @@ static void d68000_eori_to_sr(void)
 
 static void d68000_exg_dd(void)
 {
-	build_r(M68K_INS_EXG, 0);
+	build_r(M68K_INS_EXG, 4);
 	//sprintf(g_dasm_str, "exg     D%d, D%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_exg_aa(void)
 {
-	sprintf(g_dasm_str, "exg     A%d, A%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	MCInst_setOpcode(g_inst, M68K_INS_EXG);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 4; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	// sprintf(g_dasm_str, "exg     A%d, A%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_exg_da(void)
 {
-	sprintf(g_dasm_str, "exg     D%d, A%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
+	MCInst_setOpcode(g_inst, M68K_INS_EXG);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 4; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	// sprintf(g_dasm_str, "exg     D%d, A%d", (g_cpu_ir>>9)&7, g_cpu_ir&7);
 }
 
 static void d68000_ext_16(void)
