@@ -1473,6 +1473,50 @@ static void build_link(int disp)
 	op1->imm = disp;
 }
 
+static void build_cpush_cinv(int op_offset)
+{
+	MCInst_setOpcode(g_inst, M68K_INS_ILLEGAL);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 0; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->type = M68K_OP_IMM;
+	op0->imm = (g_cpu_ir >> 6) & 3;
+
+	op1->type = M68K_OP_MEM;
+	op1->address_mode = M68K_RI_ADDRESS;
+	op1->imm = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	switch ((g_cpu_ir >> 3) & 3)
+	{
+		case 0:
+			info->op_count = 0;
+			break;
+		case 1:
+			MCInst_setOpcode(g_inst, op_offset + 0);
+			//sprintf(g_dasm_str, "cpushl  %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
+			//sprintf(g_dasm_str, "cinvl   %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
+			break;
+		case 2:
+			MCInst_setOpcode(g_inst, op_offset + 1);
+			//sprintf(g_dasm_str, "cpushp  %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
+			//sprintf(g_dasm_str, "cinvp   %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
+			break;
+		case 3:
+			info->op_count = 1;
+			MCInst_setOpcode(g_inst, op_offset + 2);
+			//sprintf(g_dasm_str, "cpusha  %d; (4)", (g_cpu_ir>>6)&3);
+			//sprintf(g_dasm_str, "cinva   %d; (4)", (g_cpu_ir>>6)&3);
+			break;
+	}
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2229,21 +2273,7 @@ static void d68020_chk2_cmp2_32(void)
 static void d68040_cinv(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-	switch((g_cpu_ir>>3)&3)
-	{
-		case 0:
-			sprintf(g_dasm_str, "cinv (illegal scope); (4)");
-			break;
-		case 1:
-			sprintf(g_dasm_str, "cinvl   %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
-			break;
-		case 2:
-			sprintf(g_dasm_str, "cinvp   %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
-			break;
-		case 3:
-			sprintf(g_dasm_str, "cinva   %d; (4)", (g_cpu_ir>>6)&3);
-			break;
-	}
+	build_cpush_cinv(M68K_INS_CINVL);
 }
 
 static void d68000_clr_8(void)
@@ -2490,44 +2520,7 @@ static void d68020_cptrapcc_32(void)
 static void d68040_cpush(void)
 {
 	LIMIT_CPU_TYPES(M68040_PLUS);
-
-	MCInst_setOpcode(g_inst, M68K_INS_ILLEGAL);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 0; 
-
-	cs_m68k_op* op0 = &info->operands[0];
-	cs_m68k_op* op1 = &info->operands[1];
-
-	op0->address_mode = M68K_IMMIDIATE;
-	op0->type = M68K_OP_IMM;
-	op0->imm = (g_cpu_ir >> 6) & 3;
-
-	op1->type = M68K_OP_MEM;
-	op1->address_mode = M68K_RI_ADDRESS;
-	op1->imm = M68K_REG_A0 + (g_cpu_ir & 7);
-
-	switch ((g_cpu_ir >> 3) & 3)
-	{
-		case 0:
-			info->op_count = 0;
-			break;
-		case 1:
-			MCInst_setOpcode(g_inst, M68K_INS_CPUSHL);
-			//sprintf(g_dasm_str, "cpushl  %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
-			break;
-		case 2:
-			MCInst_setOpcode(g_inst, M68K_INS_CPUSHP);
-			//sprintf(g_dasm_str, "cpushp  %d, (A%d); (4)", (g_cpu_ir>>6)&3, g_cpu_ir&7);
-			break;
-		case 3:
-			info->op_count = 1;
-			MCInst_setOpcode(g_inst, M68K_INS_CPUSHA);
-			//sprintf(g_dasm_str, "cpusha  %d; (4)", (g_cpu_ir>>6)&3);
-			break;
-	}
+	build_cpush_cinv(M68K_INS_CPUSHL);
 }
 
 static void d68000_dbra(void)
