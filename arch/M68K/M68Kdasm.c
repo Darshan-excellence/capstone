@@ -1561,6 +1561,24 @@ static void build_movep_er(int size)
 	op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
 }
 
+static void build_moves(int size)
+{
+	uint extension = read_imm_16();
+
+	cs_m68k* info = build_init_op(M68K_INS_MOVES, 2, size);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	if (BIT_B(extension)) {
+		op0->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
+		get_ea_mode_op(op1, g_cpu_ir, size);
+	} else {
+		get_ea_mode_op(op0, g_cpu_ir, size);
+		op1->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
+	}
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -3384,35 +3402,43 @@ static void d68000_movep_er_32(void)
 
 static void d68010_moves_8(void)
 {
-	uint extension;
 	LIMIT_CPU_TYPES(M68010_PLUS);
+	build_moves(1);
+	/*
 	extension = read_imm_16();
 	if(BIT_B(extension))
 		sprintf(g_dasm_str, "moves.b %c%d, %s; (1+)", BIT_F(extension) ? 'A' : 'D', (extension>>12)&7, get_ea_mode_str_8(g_cpu_ir));
 	else
 		sprintf(g_dasm_str, "moves.b %s, %c%d; (1+)", get_ea_mode_str_8(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	*/
 }
 
 static void d68010_moves_16(void)
 {
-	uint extension;
+	//uint extension;
 	LIMIT_CPU_TYPES(M68010_PLUS);
+	build_moves(2);
+	/*
 	extension = read_imm_16();
 	if(BIT_B(extension))
 		sprintf(g_dasm_str, "moves.w %c%d, %s; (1+)", BIT_F(extension) ? 'A' : 'D', (extension>>12)&7, get_ea_mode_str_16(g_cpu_ir));
 	else
 		sprintf(g_dasm_str, "moves.w %s, %c%d; (1+)", get_ea_mode_str_16(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	*/
 }
 
 static void d68010_moves_32(void)
 {
-	uint extension;
+	//uint extension;
 	LIMIT_CPU_TYPES(M68010_PLUS);
+	build_moves(4);
+	/*
 	extension = read_imm_16();
 	if(BIT_B(extension))
 		sprintf(g_dasm_str, "moves.l %c%d, %s; (1+)", BIT_F(extension) ? 'A' : 'D', (extension>>12)&7, get_ea_mode_str_32(g_cpu_ir));
 	else
 		sprintf(g_dasm_str, "moves.l %s, %c%d; (1+)", get_ea_mode_str_32(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	*/
 }
 
 static void d68000_moveq(void)
