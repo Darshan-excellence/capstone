@@ -1597,37 +1597,65 @@ static void d68000_illegal(void)
 
 static void fpu_alu_op(int next)
 {
+	bool supports_single_op = true;
+
 	int rm = (next >> 14) & 0x1;
 	int src = (next >> 10) & 0x7;
 	int dst = (next >> 7) & 0x7;
+	int opmode = next & 0x3f;
 
-	switch (next & 0x7f)
+	// Se comment bellow on why this is being done
+
+	if ((next >> 6) & 1)
+		opmode &= ~4;
+
+	switch (opmode)
 	{
-		case 0x00: MCInst_setOpcode(g_inst, M68K_INS_FMOVE); break;
-		case 0x01: MCInst_setOpcode(g_inst, M68K_INS_FINT); break;
+		case 0x00: MCInst_setOpcode(g_inst, M68K_INS_FMOVE); supports_single_op = false; break;
+		case 0x01: MCInst_setOpcode(g_inst, M68K_INS_FINT); break; 
 		case 0x03: MCInst_setOpcode(g_inst, M68K_INS_FINTRZ); break;
 		case 0x04: MCInst_setOpcode(g_inst, M68K_INS_FSQRT); break;
 		case 0x06: MCInst_setOpcode(g_inst, M68K_INS_FLOGNP1); break;
+		case 0x08: MCInst_setOpcode(g_inst, M68K_INS_FETOXM1); break;
+		case 0x0a: MCInst_setOpcode(g_inst, M68K_INS_FATAN); break;
+		case 0x0c: MCInst_setOpcode(g_inst, M68K_INS_FASIN); break; 
+		case 0x0d: MCInst_setOpcode(g_inst, M68K_INS_FATANH); break;
 		case 0x0e: MCInst_setOpcode(g_inst, M68K_INS_FSIN); break;
 		case 0x0f: MCInst_setOpcode(g_inst, M68K_INS_FTAN); break;
+		case 0x10: MCInst_setOpcode(g_inst, M68K_INS_FETOX); break;
 		case 0x14: MCInst_setOpcode(g_inst, M68K_INS_FLOGN); break;
 		case 0x15: MCInst_setOpcode(g_inst, M68K_INS_FLOG10); break;
 		case 0x16: MCInst_setOpcode(g_inst, M68K_INS_FLOG2); break;
 		case 0x18: MCInst_setOpcode(g_inst, M68K_INS_FABS); break;
+		case 0x19: MCInst_setOpcode(g_inst, M68K_INS_FCOSH); break;
 		case 0x1a: MCInst_setOpcode(g_inst, M68K_INS_FNEG); break;
+		case 0x1c: MCInst_setOpcode(g_inst, M68K_INS_FACOS); break; 
 		case 0x1d: MCInst_setOpcode(g_inst, M68K_INS_FCOS); break;
 		case 0x1e: MCInst_setOpcode(g_inst, M68K_INS_FGETEXP); break;
-		case 0x20: MCInst_setOpcode(g_inst, M68K_INS_FDIV); break;
-		case 0x22: MCInst_setOpcode(g_inst, M68K_INS_FADD); break;
-		case 0x23: MCInst_setOpcode(g_inst, M68K_INS_FMUL); break;
-		case 0x24: MCInst_setOpcode(g_inst, M68K_INS_FSGLDIV); break;
+		case 0x1f: MCInst_setOpcode(g_inst, M68K_INS_FGETMAN); break;
+		case 0x20: MCInst_setOpcode(g_inst, M68K_INS_FDIV); supports_single_op = false; break;
+		case 0x21: MCInst_setOpcode(g_inst, M68K_INS_FMOD); supports_single_op = false; break;
+		case 0x22: MCInst_setOpcode(g_inst, M68K_INS_FADD); supports_single_op = false; break;
+		case 0x23: MCInst_setOpcode(g_inst, M68K_INS_FMUL); supports_single_op = false; break;
+		case 0x24: MCInst_setOpcode(g_inst, M68K_INS_FSGLDIV); supports_single_op = false; break;
 		case 0x25: MCInst_setOpcode(g_inst, M68K_INS_FREM); break;
 		case 0x27: MCInst_setOpcode(g_inst, M68K_INS_FSGLMUL); break;
-		case 0x28: MCInst_setOpcode(g_inst, M68K_INS_FSUB); break;
-		case 0x38: MCInst_setOpcode(g_inst, M68K_INS_FCMP); break;
+		case 0x28: MCInst_setOpcode(g_inst, M68K_INS_FSUB); supports_single_op = false; break;
+		case 0x38: MCInst_setOpcode(g_inst, M68K_INS_FCMP); supports_single_op = false; break;
 		case 0x3a: MCInst_setOpcode(g_inst, M68K_INS_FTST); break;
 		default:	
 			break;
+	}
+
+	// Some trickery here! It's not documented but if bit 6 is set this is a s/d opcode and then
+	// if bit 2 is set it's a d. As we already have set our opcode in the code above we can just
+	// offset it as the following 2 op codes (if s/d is supported) will always be directly after it
+
+	if ((next >> 6) & 1) {
+		if ((next >> 2) & 1)
+			g_inst->Opcode += 2;
+		else
+			g_inst->Opcode += 1;
 	}
 
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
@@ -1637,6 +1665,12 @@ static void fpu_alu_op(int next)
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
+
+	if (rm == 0 && supports_single_op && src == dst) {
+		info->op_count = 1;
+		op0->reg = M68K_REG_FP0 + dst;
+		return;
+	}
 
 	if (rm == 1) {
 		// TODO: Use size here
@@ -3778,7 +3812,7 @@ static void d68000_ori_16(void)
 
 static void d68000_ori_32(void)
 {
-	build_imm_ea(M68K_INS_ORI, 4, read_imm_16());
+	build_imm_ea(M68K_INS_ORI, 4, read_imm_32());
 	//sprintf(g_dasm_str, "ori.l   %s, %s", str, get_ea_mode_str_32(g_cpu_ir));
 }
 
@@ -4380,7 +4414,7 @@ static void d68020_unpk_mm(void)
 static opcode_struct g_opcode_info[] =
 {
 /*  opcode handler    mask    match   ea mask */
-	{d68000_fpu          , 0xffff, 0xf200, 0x000},
+	{d68000_fpu          , 0xff00, 0xf200, 0x000},
 	{d68000_1010         , 0xf000, 0xa000, 0x000},
 	{d68000_1111         , 0xf000, 0xf000, 0x000},
 	{d68000_abcd_rr      , 0xf1f8, 0xc100, 0x000},
