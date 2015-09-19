@@ -1408,6 +1408,29 @@ static void build_cas2(int size)
 						  (reg_1 + (BIT_F(extension) ? 8 : 0));
 }
 
+static void build_chk2_cmp2(int size)
+{
+	uint extension = read_imm_16();
+
+	if (BIT_B(extension))
+		MCInst_setOpcode(g_inst, M68K_INS_CHK2);
+	else
+		MCInst_setOpcode(g_inst, M68K_INS_CMP2);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 2;
+	info->op_size = size; 
+
+	get_ea_mode_op(op0, g_cpu_ir, size);
+
+	op1->address_mode = M68K_AM_NONE;
+	op1->type = M68K_OP_REG;
+	op1->reg = (BIT_F(extension) ? M68K_REG_A0 : M68K_REG_D0) + ((extension >> 12) & 7);
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2136,26 +2159,29 @@ static void d68020_chk_32(void)
 
 static void d68020_chk2_cmp2_8(void)
 {
-	uint extension;
+	//uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "%s.b  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_8(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	build_chk2_cmp2(1);
+	//extension = read_imm_16();
+	//sprintf(g_dasm_str, "%s.b  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_8(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
 }
 
 static void d68020_chk2_cmp2_16(void)
 {
-	uint extension;
+	//uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "%s.w  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_16(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	//extension = read_imm_16();
+	build_chk2_cmp2(2);
+	//sprintf(g_dasm_str, "%s.w  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_16(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
 }
 
 static void d68020_chk2_cmp2_32(void)
 {
-	uint extension;
+	//uint extension;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension = read_imm_16();
-	sprintf(g_dasm_str, "%s.l  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_32(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
+	//extension = read_imm_16();
+	build_chk2_cmp2(4);
+	//sprintf(g_dasm_str, "%s.l  %s, %c%d; (2+)", BIT_B(extension) ? "chk2" : "cmp2", get_ea_mode_str_32(g_cpu_ir), BIT_F(extension) ? 'A' : 'D', (extension>>12)&7);
 }
 
 static void d68040_cinv(void)

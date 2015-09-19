@@ -257,6 +257,12 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 					break;
 				}
 
+				case M68K_OP_REG:
+				{
+					SStream_concat(O, "%s", s_reg_names[op->reg]);
+					break;
+				}
+
 				default:
 					break;
 			}
