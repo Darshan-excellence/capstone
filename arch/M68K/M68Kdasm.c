@@ -3690,7 +3690,9 @@ static void d68000_roxl_ea(void)
 static void d68010_rtd(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
-	sprintf(g_dasm_str, "rtd     %s; (1+)", get_imm_str_s16());
+
+	build_bxx(M68K_INS_RTD, 0, read_imm_16());
+	//sprintf(g_dasm_str, "rtd     %s; (1+)", get_imm_str_s16());
 }
 
 static void d68000_rte(void)
@@ -3702,7 +3704,20 @@ static void d68000_rte(void)
 static void d68020_rtm(void)
 {
 	LIMIT_CPU_TYPES(M68020_ONLY);
-	sprintf(g_dasm_str, "rtm     %c%d; (2+)", BIT_3(g_cpu_ir) ? 'A' : 'D', g_cpu_ir&7);
+
+	build_bxx(M68K_INS_RTM, 0, 0); 
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op = &info->operands[0];
+	
+	op->address_mode = M68K_AM_NONE;
+	op->type = M68K_OP_REG;
+	
+	if (BIT_3(g_cpu_ir)) {
+		op->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+	} else {
+		op->reg = M68K_REG_D0 + (g_cpu_ir & 7);
+	}
 }
 
 static void d68000_rtr(void)
