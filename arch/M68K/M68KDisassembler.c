@@ -387,12 +387,9 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	// Make sure we always stay within range 
 
 	if (s > code_len)
-	{
 		*size = code_len;
-		return true;
-	}
-
-	*size = (uint16_t)s;
+	else
+		*size = (uint16_t)s;
 
 	return true;
 }
