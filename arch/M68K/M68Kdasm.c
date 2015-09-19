@@ -1454,6 +1454,25 @@ static void build_move16(int data[2], int modes[2])
 	}
 }
 
+static void build_link(int disp)
+{
+	MCInst_setOpcode(g_inst, M68K_INS_LINK);
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	info->op_count = 2;
+	info->op_size = 0; 
+
+	op0->address_mode = M68K_AM_NONE;
+	op0->reg = M68K_REG_A0 + (g_cpu_ir & 7);
+
+	op1->address_mode = M68K_IMMIDIATE;
+	op1->type = M68K_OP_IMM;
+	op1->imm = disp;
+}
+
 static void build_er_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(true, opcode, size);
@@ -2717,13 +2736,15 @@ static void d68000_lea(void)
 
 static void d68000_link_16(void)
 {
-	sprintf(g_dasm_str, "link    A%d, %s", g_cpu_ir&7, get_imm_str_s16());
+	build_link(read_imm_16());
+	//sprintf(g_dasm_str, "link    A%d, %s", g_cpu_ir&7, get_imm_str_s16());
 }
 
 static void d68020_link_32(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	sprintf(g_dasm_str, "link    A%d, %s; (2+)", g_cpu_ir&7, get_imm_str_s32());
+	build_link(read_imm_32());
+	//sprintf(g_dasm_str, "link    A%d, %s; (2+)", g_cpu_ir&7, get_imm_str_s32());
 }
 
 static void d68000_lsr_s_8(void)
