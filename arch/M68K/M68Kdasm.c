@@ -1281,7 +1281,7 @@ static void build_movem_er(int opcode, int size)
 
 static void build_illegal(int data)
 {
-	cs_m68k* info = build_init_op(M68K_INS_ILLEGAL, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_ILLEGAL, 1, 0);
 
 	MCInst_setOpcode(g_inst, M68K_INS_ILLEGAL);
 
@@ -2460,10 +2460,30 @@ static void d68020_cpgen(void)
 	int dst = (next >> 7) & 0x7;
 	int opmode = next & 0x3f;
 
+	// special handling for fmovecr
+
+	if (BITFIELD(g_cpu_ir, 5, 0) == 0 && BITFIELD(next, 15, 10) == 0x17) {
+		cs_m68k* info = build_init_op(M68K_INS_FMOVECR, 2, 0);
+
+		cs_m68k_op* op0 = &info->operands[0];
+		cs_m68k_op* op1 = &info->operands[1];
+
+		op0->address_mode = M68K_IMMIDIATE;
+		op0->type = M68K_OP_IMM;
+		op0->imm = next & 0x3f;
+
+		op1->reg = M68K_REG_FP0 + ((next >> 7) & 7);
+		return;
+	}
+
 	// Se comment bellow on why this is being done
 
 	if ((next >> 6) & 1)
 		opmode &= ~4;
+
+	// special handling of some instructions here
+	//
+
 
 	switch (opmode)
 	{
