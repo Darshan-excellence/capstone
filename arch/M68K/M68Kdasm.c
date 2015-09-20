@@ -2531,6 +2531,33 @@ static void d68020_cpgen(void)
 	}
 
 	if (rm == 1) {
+		switch (src)
+		{
+			case 0x00 : info->op_size.cpu_size = M68K_CPU_SIZE_LONG; break; // long
+			case 0x06 : info->op_size.cpu_size = M68K_CPU_SIZE_BYTE; break; // byte
+			case 0x04 : info->op_size.cpu_size = M68K_CPU_SIZE_WORD; break; // word
+			case 0x01 : 
+			{
+				info->op_size.type = M68K_SIZE_TYPE_FPU;
+				info->op_size.fpu_size = M68K_FPU_SIZE_SINGLE; 
+				break;
+			}
+
+			case 0x05:
+			{
+				info->op_size.type = M68K_SIZE_TYPE_FPU;
+				info->op_size.fpu_size = M68K_FPU_SIZE_DOUBLE; 
+				break;
+			}
+
+			default :
+			{
+				info->op_size.type = M68K_SIZE_TYPE_FPU;
+				info->op_size.fpu_size = M68K_FPU_SIZE_EXTENDED; 
+				break;
+			}
+		}
+
 		// TODO: Use size here
 		get_ea_mode_op(op0, g_cpu_ir, 4);
 	} else {
