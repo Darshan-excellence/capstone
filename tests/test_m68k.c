@@ -43,33 +43,29 @@ static void print_insn_detail(cs_insn *ins)
 
 	for (i = 0; i < m68k->op_count; i++) {
 		cs_m68k_op* op = &(m68k->operands[i]);
-		/*
+		
 		switch((int)op->type) {
 			default:
 				break;
-			case m68k_OP_REG:
+			case M68K_OP_REG:
 				printf("\t\toperands[%u].type: REG = %s\n", i, cs_reg_name(handle, op->reg));
 				break;
-			case m68k_OP_IMM:
-				printf("\t\toperands[%u].type: IMM = 0x%x\n", i, op->imm);
+			case M68K_OP_IMM:
+				printf("\t\toperands[%u].type: IMM = 0x%x\n", i, (int)op->imm);
 				break;
-			case m68k_OP_MEM:
+			case M68K_OP_MEM:
 				printf("\t\toperands[%u].type: MEM\n", i);
-				if (op->mem.base != m68k_REG_INVALID)
+				if (op->mem.base_reg != M68K_REG_INVALID)
 					printf("\t\t\toperands[%u].mem.base: REG = %s\n",
-							i, cs_reg_name(handle, op->mem.base));
-				if (op->mem.index != m68k_REG_INVALID)
+							i, cs_reg_name(handle, op->mem.base_reg));
+				if (op->mem.index_reg != M68K_REG_INVALID)
 					printf("\t\t\toperands[%u].mem.index: REG = %s\n",
-							i, cs_reg_name(handle, op->mem.index));
+							i, cs_reg_name(handle, op->mem.index_reg));
 				if (op->mem.disp != 0)
 					printf("\t\t\toperands[%u].mem.disp: 0x%x\n", i, op->mem.disp);
-				if (op->mem.direct != 1)
-					printf("\t\t\toperands[%u].mem.direct: -1\n", i);
-
 
 				break;
 		}
-		*/
 	}
 
 	printf("\n");
