@@ -126,7 +126,7 @@ static void test()
 	struct platform platforms[] = {
 		{
 			CS_ARCH_M68K,
-			CS_MODE_BIG_ENDIAN,
+			CS_MODE_BIG_ENDIAN | CS_MODE_M68K_000,
 			code,
 			size,
 			//(unsigned char*)M68K_CODE,
@@ -160,7 +160,7 @@ static void test()
 
 			for (j = 0; j < count; j++) {
 				printf("0x%"PRIx64":\t%s\t%s\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
-				print_insn_detail(&insn[j]);
+				//print_insn_detail(&insn[j]);
 			}
 			printf("0x%"PRIx64":\n", insn[j-1].address + insn[j-1].size);
 

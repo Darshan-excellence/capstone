@@ -370,11 +370,27 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 {
 	int s;
 
+	cs_struct* handle = (cs_struct *)(uintptr_t)ud;
+
 	s_disassemblyBuffer = (uint8_t*)code;
 	s_baseAddress = (uint32_t)address;
 
-	s = m68k_disassemble(instr, address, M68K_CPU_TYPE_68040);
-	//printf("getInstruction: %p %d %p\n", (void*)address, s, s_disassemblyBuffer);
+	// Use 000 by default
+
+	int cpu_type = M68K_CPU_TYPE_68000;
+
+	if (handle->mode & CS_MODE_M68K_010)
+		cpu_type = M68K_CPU_TYPE_68010;
+	if (handle->mode & CS_MODE_M68K_020)
+		cpu_type = M68K_CPU_TYPE_68020;
+	if (handle->mode & CS_MODE_M68K_030)
+		cpu_type = M68K_CPU_TYPE_68030;
+	if (handle->mode & CS_MODE_M68K_040)
+		cpu_type = M68K_CPU_TYPE_68040;
+	if (handle->mode & CS_MODE_M68K_060)
+		cpu_type = M68K_CPU_TYPE_68040;	// 060 = 040 for now
+
+	s = m68k_disassemble(instr, address, cpu_type);
 
 	if (s == 0)
 	{
@@ -385,7 +401,6 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 	SStream ss;
 	SStream_Init(&ss);
 	M68K_printInst(instr, &ss, info);
-	//printf("%s\n", ss.buffer);
 
 	// Make sure we always stay within range 
 
