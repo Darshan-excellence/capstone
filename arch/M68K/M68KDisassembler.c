@@ -361,7 +361,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 		printAddressingMode(O, info, &info->operands[i]);
 
 		if ((i + 1) != op_count)
-			SStream_concat0(O, ",");
+			SStream_concat0(O, ", ");
 	}
 #endif
 }
