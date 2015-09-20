@@ -225,7 +225,7 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 							 
 		case M68K_AM_PCI_INDEX_8_BIT_DISP : 
 		{
-			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 
+			SStream_concat(O, "$%x(pc, %s)", op->mem.disp, getRegName(op->mem.index_reg)); 
 			break;
 		}
 
@@ -238,16 +238,16 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 			SStream_concat(O, "(");
 
 			if (op->address_mode == M68K_AM_PCI_INDEX_BASE_DISP) {
-				SStream_concat(O, "pc,%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
+				SStream_concat(O, "pc, %s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 			} else { 
 				if (op->mem.base_reg != M68K_REG_INVALID)
-					SStream_concat(O, "a%d,", op->mem.base_reg - M68K_REG_A0);
+					SStream_concat(O, "a%d, ", op->mem.base_reg - M68K_REG_A0);
 
 				SStream_concat(O, "%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 			}
 
 			if (op->mem.scale > 0)
-				SStream_concat(O, "*%d)", op->mem.scale);
+				SStream_concat(O, " * %d)", op->mem.scale);
 			else
 				SStream_concat(O, ")", op->mem.scale);
 
@@ -269,7 +269,7 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 
 			if (op->mem.base_reg != M68K_REG_INVALID) {
 				if (op->mem.in_disp > 0)
-					SStream_concat(O, ",%s", getRegName(op->mem.base_reg)); 
+					SStream_concat(O, ", %s", getRegName(op->mem.base_reg)); 
 				else
 					SStream_concat(O, "%s", getRegName(op->mem.base_reg)); 
 			}
@@ -278,16 +278,16 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 				SStream_concat(O, "]");
 
 			if (op->mem.index_reg != M68K_REG_INVALID)
-				SStream_concat(O, ",%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
+				SStream_concat(O, ", %s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 
 			if (op->mem.scale > 0)
-				SStream_concat(O, "*%d", op->mem.scale);
+				SStream_concat(O, " * %d", op->mem.scale);
 
 			if (op->address_mode == M68K_AM_MEMI_PRE_INDEX || op->address_mode == M68K_AM_PC_MEMI_PRE_INDEX)
 				SStream_concat(O, "]");
 
 			if (op->mem.out_disp > 0)
-				SStream_concat(O, ",$%x", op->mem.out_disp);
+				SStream_concat(O, ", $%x", op->mem.out_disp);
 
 			SStream_concat(O, ")");
 		}
