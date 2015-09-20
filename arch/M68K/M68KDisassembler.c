@@ -280,14 +280,34 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	const int op_count = info->op_count;
 
-
 	SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
 
-	switch (info->op_size)
+	switch (info->op_size.type)
 	{
-		case 1 : SStream_concat0(O, ".b"); break;
-		case 2 : SStream_concat0(O, ".w"); break;
-		case 4 : SStream_concat0(O, ".l"); break;
+		case M68K_SIZE_TYPE_CPU :
+		{
+			switch (info->op_size.cpu_size)
+			{
+				case M68K_CPU_SIZE_BYTE  : SStream_concat0(O, ".b"); break;
+				case M68K_CPU_SIZE_WORD  : SStream_concat0(O, ".w"); break;
+				case M68K_CPU_SIZE_LONG  : SStream_concat0(O, ".l"); break;
+				case M68K_CPU_SIZE_NONE : break;  
+			}
+
+			break;
+		}
+
+		case M68K_SIZE_TYPE_FPU :
+		{
+			switch (info->op_size.fpu_size)
+			{
+				case M68K_FPU_SIZE_SINGLE  : SStream_concat0(O, ".s"); break;
+				case M68K_FPU_SIZE_DOUBLE  : SStream_concat0(O, ".d"); break;
+				case M68K_FPU_SIZE_EXTENDED  : SStream_concat0(O, ".x"); break;
+			}
+
+			break;
+		}
 	}
 
 	SStream_concat0(O, " ");

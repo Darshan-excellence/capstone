@@ -895,7 +895,7 @@ static cs_m68k* build_init_op(int opcode, int count, int size)
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	info->op_count = count;
-	info->op_size = size; 
+	info->op_size.cpu_size = size; 
 
 	return info;
 }
@@ -2519,7 +2519,7 @@ static void d68020_cpgen(void)
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	info->op_count = 2;
-	info->op_size = 0; 
+	info->op_size.cpu_size = 0; 
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2679,15 +2679,12 @@ static void d68020_divl(void)
 
 	uint extension = read_imm_16();
 
+	cs_m68k* info = build_init_op(M68K_INS_DIVS, 2, 4);
+
 	if (BIT_B((extension)))
 		MCInst_setOpcode(g_inst, M68K_INS_DIVS);
 	else
 		MCInst_setOpcode(g_inst, M68K_INS_DIVU);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 4; 
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2774,12 +2771,7 @@ static void d68000_exg_dd(void)
 
 static void d68000_exg_aa(void)
 {
-	MCInst_setOpcode(g_inst, M68K_INS_EXG);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 4; 
+	cs_m68k* info = build_init_op(M68K_INS_EXG, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2795,12 +2787,7 @@ static void d68000_exg_aa(void)
 
 static void d68000_exg_da(void)
 {
-	MCInst_setOpcode(g_inst, M68K_INS_EXG);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 4; 
+	cs_m68k* info = build_init_op(M68K_INS_EXG, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -3589,15 +3576,12 @@ static void d68020_mull(void)
 
 	uint extension = read_imm_16();
 
+	cs_m68k* info = build_init_op(M68K_INS_MULS, 2, 4);
+
 	if (BIT_B((extension)))
 		MCInst_setOpcode(g_inst, M68K_INS_MULS);
 	else
 		MCInst_setOpcode(g_inst, M68K_INS_MULU);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 4; 
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -4009,12 +3993,7 @@ static void d68000_sbcd_mm(void)
 
 static void d68000_scc(void)
 {
-	MCInst_setOpcode(g_inst, s_scc_lut[(g_cpu_ir >> 8) & 0xf]);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 1;
-	info->op_size = 1;
+	cs_m68k* info = build_init_op(s_scc_lut[(g_cpu_ir >> 8) & 0xf], 1, 1);
 
 	get_ea_mode_op(&info->operands[0], g_cpu_ir, 1);
 	//sprintf(g_dasm_str, "s%-2s     %s", g_cc[(g_cpu_ir>>8)&0xf], get_ea_mode_str_8(g_cpu_ir));
@@ -4290,12 +4269,7 @@ static void d68020_tst_i_32(void)
 
 static void d68000_unlk(void)
 {
-	MCInst_setOpcode(g_inst, M68K_INS_UNLK);
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 1;
-	info->op_size = 0; 
+	cs_m68k* info = build_init_op(M68K_INS_UNLK, 1, 0);
 
 	cs_m68k_op* op = &info->operands[0];
 

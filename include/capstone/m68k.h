@@ -17,7 +17,7 @@ extern "C" {
 	
 #define M68K_OPERAND_COUNT 4
 	
-//> M68K registers
+//> M68K registers and special registers
 typedef enum m68k_reg {
 	M68K_REG_INVALID = 0,
 
@@ -106,54 +106,83 @@ typedef enum m68k_adress_mode {
 } m68k_adress_mode; 
 
 //> Operand type for instruction's operands
-
 typedef enum m68k_op_type {
 	M68K_OP_INVALID = 0, // = CS_OP_INVALID (Uninitialized).
-	M68K_OP_REG, // = CS_OP_REG (Register operand).
-	M68K_OP_IMM, // = CS_OP_IMM (Immediate operand).
-	M68K_OP_MEM, // = CS_OP_MEM (Memory operand).
-	M68K_OP_FP,  // = CS_OP_FP  (Floating-Point operand)
-	M68K_OP_REG_BITS, // Registes bits movem
-	M68K_OP_REG_PAIR, // Register pair in the same op (upper 4 bits for first reg, lower for second) 
+	M68K_OP_REG,         // = CS_OP_REG (Register operand).
+	M68K_OP_IMM,         // = CS_OP_IMM (Immediate operand).
+	M68K_OP_MEM,         // = CS_OP_MEM (Memory operand).
+	M68K_OP_FP,          // = CS_OP_FP  (Floating-Point operand)
+	M68K_OP_REG_BITS,    // Registes bits movem
+	M68K_OP_REG_PAIR,    // Register pair in the same op (upper 4 bits for first reg, lower for second) 
 } m68k_op_type;
 
 // Instruction's operand referring to memory
 // This is associated with M68K_OP_MEM operand type above
-
 typedef struct m68k_op_mem {
-	m68k_reg base_reg; // base register (or M68K_REG_INVALID if irrelevant)
-	m68k_reg index_reg; // index register (or M68K_REG_INVALID if irrelevant)
-	m68k_reg in_base_reg; // indirect base register (or M68K_REG_INVALID if irrelevant)
-	uint32_t in_disp; // indirect displacement 
-	uint32_t out_disp; // outher displacement 
-	uint16_t disp;	// displacement value
-	uint8_t scale;	// scale for index register
-	uint8_t bitfield; // set to true if the two values bellow should be used 
-	uint8_t width;	// used for bf* instructions 
-	uint8_t offset;	// used for bf* instructions
-	uint8_t index_size; // 0 = w, 1 = l
+	m68k_reg base_reg;      // base register (or M68K_REG_INVALID if irrelevant)
+	m68k_reg index_reg;     // index register (or M68K_REG_INVALID if irrelevant)
+	m68k_reg in_base_reg;   // indirect base register (or M68K_REG_INVALID if irrelevant)
+	uint32_t in_disp; 	    // indirect displacement 
+	uint32_t out_disp;      // outher displacement 
+	uint16_t disp;	        // displacement value
+	uint8_t scale;	        // scale for index register
+	uint8_t bitfield;       // set to true if the two values bellow should be used 
+	uint8_t width;	        // used for bf* instructions 
+	uint8_t offset;	        // used for bf* instructions
+	uint8_t index_size;     // 0 = w, 1 = l
 } m68k_op_mem;
 
 // Instruction operand
 typedef struct cs_m68k_op {
 	union {
-		uint64_t imm;		// immediate value for IMM operand
-		double fimm;
-		m68k_reg reg;	// register value for REG operand
-		m68k_op_mem mem;
+		uint64_t imm;           // immediate value for IMM operand
+		double fimm; 		    // double imm
+		float simm; 		    // float imm
+		m68k_reg reg;		    // register value for REG operand
+		m68k_op_mem mem; 	    // data when operand is targeting memory
 		uint16_t register_bits; // register bits for movem/cas2/etc (always in d0-d7 - a0-a7 order)
 	};
 	m68k_op_type type;
 	m68k_adress_mode address_mode;	// M68K addressing mode for this op 
 } cs_m68k_op;
 
+// Operation size of the CPU instructions 
+typedef enum m68k_cpu_size {
+	M68K_CPU_SIZE_NONE = 0,		// unsized or unspecified
+	M68K_CPU_SIZE_BYTE = 1,		// 1 byte in size
+	M68K_CPU_SIZE_WORD = 2,		// 2 bytes in size
+	M68K_CPU_SIZE_LONG = 4,		// 4 bytes in size
+} m68k_cpu_size;
+
+// Operation size of the FPU instructions (Notice that FPU instruction can also use CPU sizes if needed)
+typedef enum m68k_fpu_size {
+	M68K_FPU_SIZE_SINGLE = 4,		// 4 byte in size (single float) 
+	M68K_FPU_SIZE_DOUBLE = 8,		// 8 byte in size (double) 
+	M68K_FPU_SIZE_EXTENDED = 12,	// 12 byte in size (extended real format)
+} m68k_fpu_size;
+
+// Type of size that is being used for the current instruction
+typedef enum m68k_size_type {
+	M68K_SIZE_TYPE_CPU,
+	M68K_SIZE_TYPE_FPU,
+} m68k_size_type;
+
+// Operation size of the current instruction (NOT the actually size of instruction)
+typedef struct m68k_op_size {
+	m68k_size_type type;
+	union {
+		m68k_cpu_size cpu_size;
+		m68k_fpu_size fpu_size;
+	};
+} m68k_op_size;
+
+// The M68K instruction and it's operands
 typedef struct cs_m68k
 {
-	// Number of operands of this instruction, 
-	// or 0 when instruction has no operand.
+	// Number of operands of this instruction or 0 when instruction has no operand.
 	cs_m68k_op operands[M68K_OPERAND_COUNT]; // operands for this instruction.
-	uint8_t op_count;
-	uint8_t op_size;	// size of data operand works on in bytes (.b, .w, .l, etc)
+	m68k_op_size op_size;	// size of data operand works on in bytes (.b, .w, .l, etc)
+	uint8_t op_count; // number of operands for the instruction
 } cs_m68k;
 
 //> M68K instruction
