@@ -975,6 +975,7 @@ static void build_rr(int opcode, uint8_t size, int imm)
 	if (imm > 0)
 	{
 		info->op_count = 3;
+		op2->type = M68K_OP_IMM;
 		op2->address_mode = M68K_IMMIDIATE;
 		op2->imm = imm;
 	}
@@ -1003,6 +1004,7 @@ static void build_imm_ea(int opcode, uint8_t size, int imm)
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
 	
+	op0->type = M68K_OP_IMM;
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = imm; 
 
@@ -1018,6 +1020,7 @@ static void build_3bit_d(int opcode, int size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
+	op0->type = M68K_OP_IMM;
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
 
@@ -1034,6 +1037,7 @@ static void build_3bit_q(int opcode, int size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
+	op0->type = M68K_OP_IMM;
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = (g_cpu_ir & 0xff);
 
@@ -1050,6 +1054,7 @@ static void build_3bit_ea(int opcode, int size)
 	
 	get_ea_mode_op(op0, g_cpu_ir, size);
 
+	op0->type = M68K_OP_IMM;
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = g_3bit_qdata_table[(g_cpu_ir >> 9) & 7];
 
@@ -1075,6 +1080,7 @@ static void build_mm(int opcode, uint8_t size, int imm)
 	if (imm > 0)
 	{
 		info->op_count = 3;
+		op2->type = M68K_OP_IMM;
 		op2->address_mode = M68K_IMMIDIATE;
 		op2->imm = imm;
 	}
@@ -1131,6 +1137,7 @@ static void build_imm_special_reg(int opcode, int imm, int size, m68k_reg reg)
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
 	
+	op0->type = M68K_OP_IMM;
 	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = imm; 
 
@@ -1144,6 +1151,7 @@ static void build_bxx(int opcode, int size, int jump_offset)
 
 	cs_m68k_op* op = &info->operands[0];
 	
+	op->type = M68K_OP_IMM;
 	op->address_mode = M68K_IMMIDIATE;
 	op->imm = jump_offset;
 }
@@ -1168,6 +1176,7 @@ static void build_dbxx(int opcode, int size, int jump_offset)
 	op0->address_mode = M68K_RD_DATA;
 	op0->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 	
+	op1->type = M68K_OP_IMM;
 	op1->address_mode = M68K_IMMIDIATE;
 	op1->imm = jump_offset;
 }
@@ -1306,8 +1315,8 @@ static void build_illegal(int data)
 
 	cs_m68k_op* op = &info->operands[0];
 
-	op->address_mode = M68K_IMMIDIATE;
 	op->type = M68K_OP_IMM;
+	op->address_mode = M68K_IMMIDIATE;
 	op->imm = data;
 }
 
@@ -2415,8 +2424,8 @@ static void d68020_cpbcc_32(void)
 
 	cs_m68k_op* op0 = &info->operands[0];
 
-	op0->address_mode = M68K_IMMIDIATE;
 	op0->type = M68K_OP_IMM;
+	op0->address_mode = M68K_IMMIDIATE;
 	op0->imm = new_pc;
 
 /*
