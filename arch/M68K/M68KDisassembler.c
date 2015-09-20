@@ -16,88 +16,6 @@
 
 #include "M68Kdasm.h"
 
-enum {
-  M68K_NoRegister,
-  M68K_SR,
-  M68K_PC,
-  M68K_D0,
-  M68K_D1,
-  M68K_D2,
-  M68K_D3,
-  M68K_D4,
-  M68K_D5,
-  M68K_D6,
-  M68K_D7,
-  M68K_A0,
-  M68K_A1,
-  M68K_A2,
-  M68K_A3,
-  M68K_A4,
-  M68K_A5,
-  M68K_A6,
-  M68K_A7,
-  M68K_NUM_TARGET_REGS
-};
-
-// Register classes
-enum {
-  M68K_DRegsRegClassID = 0,
-  M68K_ARRegsRegClassID = 1
-};
-
-static MCPhysReg M68KRegDiffLists[] = {
-  /* 0 */ 65535, 0,
-};
-
-static uint16_t M68KSubRegIdxLists[] = {
-  /* 0 */ 0,
-};
-
-static MCRegisterDesc M68KRegDesc[] = { // Descriptors
-  { 0, 0, 0, 0, 0, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-  { 0, 1, 1, 0, 1, 0 },
-};
-
-  // RRegs Register Class...
-  static MCPhysReg DRegs[] = {
-    M68K_D0, M68K_D1, M68K_D2, M68K_D3, M68K_D4, M68K_D5, M68K_D6, M68K_D7, M68K_SR, M68K_PC,
-  };
-
-  // RRegs Bit set.
-  static uint8_t DRegsBits[] = {
-    0xfe, 0xff, 0x01, 
-  };
-
-  // GRRegs Register Class...
-  static MCPhysReg ARRegs[] = {
-    M68K_A0, M68K_A1, M68K_A2, M68K_A3, M68K_A4, M68K_A5, M68K_A6, M68K_A7,
-  };
-
-  // GRRegs Bit set.
-  static uint8_t ARRegsBits[] = {
-    0xe0, 0xff, 0x01, 
-  };
-
-static MCRegisterClass M68KMCRegisterClasses[] = {
-  { DRegs, DRegsBits, 1, 32, sizeof(DRegsBits), M68K_DRegsRegClassID, 4, 4, 1, 0 },
-  { ARRegs, ARRegsBits, 0, 32, sizeof(ARRegsBits), M68K_ARRegsRegClassID, 4, 4, 1, 1 },
-};
-
 static const char* s_reg_names[] =
 {
 	"invalid",
@@ -138,14 +56,6 @@ static const char* s_instruction_names[] = {
 
 void M68K_init(MCRegisterInfo *MRI)
 {
-	MCRegisterInfo_InitMCRegisterInfo(MRI, M68KRegDesc, 17,
-			0, 0,
-			M68KMCRegisterClasses, 2,
-			0, 0,
-			M68KRegDiffLists,
-			0,
-			M68KSubRegIdxLists, 1,
-			0);
 }
 
 static uint8_t* s_disassemblyBuffer;
