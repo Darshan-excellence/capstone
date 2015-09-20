@@ -197,16 +197,16 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 		}
 
 
-		case M68K_RD_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
-		case M68K_RD_ADDRESS : SStream_concat(O, "a%d", (op->reg - M68K_REG_A0)); break;
-		case M68K_RI_ADDRESS : SStream_concat(O, "(a%d)", (op->reg - M68K_REG_A0)); break;
-		case M68K_RI_ADDRESS_PI : SStream_concat(O, "(a%d)+", (op->reg - M68K_REG_A0)); break;
-		case M68K_RI_ADDRESS_PD : SStream_concat(O, "-(a%d)", (op->reg - M68K_REG_A0)); break;
-		case M68K_RI_ADDRESS_D : SStream_concat(O, "$%x(a%d)", op->mem.disp, (op->reg - M68K_REG_A0)); break;
-		case M68K_PCI_DISP : SStream_concat(O, "$%x(pc)", op->mem.disp); break;
-		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
-		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
-		case M68K_IMMIDIATE : 
+		case M68K_AM_REG_DIRECT_DATA : SStream_concat(O, "d%d", (op->reg - M68K_REG_D0)); break;
+		case M68K_AM_REG_DIRECT_ADDR : SStream_concat(O, "a%d", (op->reg - M68K_REG_A0)); break;
+		case M68K_AM_REGI_ADDR : SStream_concat(O, "(a%d)", (op->reg - M68K_REG_A0)); break;
+		case M68K_AM_REGI_ADDR_POST_INC : SStream_concat(O, "(a%d)+", (op->reg - M68K_REG_A0)); break;
+		case M68K_AM_REGI_ADDR_PRE_DEC : SStream_concat(O, "-(a%d)", (op->reg - M68K_REG_A0)); break;
+		case M68K_AM_REGI_ADDR_DISP : SStream_concat(O, "$%x(a%d)", op->mem.disp, (op->reg - M68K_REG_A0)); break;
+		case M68K_AM_PCI_DISP : SStream_concat(O, "$%x(pc)", op->mem.disp); break;
+		case M68K_AM_ABSOLUTE_DATA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
+		case M68K_AM_ABSOLUTE_DATA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
+		case M68K_AM_IMMIDIATE : 
 		{
 			if (inst->op_size.type == M68K_SIZE_TYPE_FPU) {
 				if (inst->op_size.fpu_size == M68K_FPU_SIZE_SINGLE)
@@ -223,21 +223,21 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 			break;
 		}
 							 
-		case M68K_PCIIWI_8_BIT : 
+		case M68K_AM_PCI_INDEX_8_BIT_DISP : 
 		{
 			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 
 			break;
 		}
 
-		case M68K_PCIIWI_BASE : 
-		case M68K_ARIWI_BASE : 
+		case M68K_AM_PCI_INDEX_BASE_DISP : 
+		case M68K_AM_AREGI_INDEX_BASE_DISP : 
 		{
 			if (op->mem.in_disp > 0)
 				SStream_concat(O, "$%x", op->mem.in_disp);
 
 			SStream_concat(O, "(");
 
-			if (op->address_mode == M68K_PCIIWI_BASE) {
+			if (op->address_mode == M68K_AM_PCI_INDEX_BASE_DISP) {
 				SStream_concat(O, "pc,%s.%c", getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
 			} else { 
 				if (op->mem.base_reg != M68K_REG_INVALID)
@@ -257,10 +257,10 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 		// It's ok to just use PCMI here as is as we set base_reg to PC in the disassembler. While this is not strictly correct it makes the code
 		// easier and that is what actually happens when the code is executed anyway.
 
-		case M68K_PCMI_PI:
-		case M68K_PCMI_PE:
-		case M68K_MI_PE:
-		case M68K_MI_PI:
+		case M68K_AM_PC_MEMI_POST_INDEX:
+		case M68K_AM_PC_MEMI_PRE_INDEX:
+		case M68K_AM_MEMI_PRE_INDEX:
+		case M68K_AM_MEMI_POST_INDEX:
 		{
 			SStream_concat(O, "([");
 
@@ -274,7 +274,7 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 					SStream_concat(O, "%s", getRegName(op->mem.base_reg)); 
 			}
 
-			if (op->address_mode == M68K_MI_PI || op->address_mode == M68K_PCMI_PI)
+			if (op->address_mode == M68K_AM_MEMI_POST_INDEX || op->address_mode == M68K_AM_PC_MEMI_POST_INDEX)
 				SStream_concat(O, "]");
 
 			if (op->mem.index_reg != M68K_REG_INVALID)
@@ -283,7 +283,7 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 			if (op->mem.scale > 0)
 				SStream_concat(O, "*%d", op->mem.scale);
 
-			if (op->address_mode == M68K_MI_PE || op->address_mode == M68K_PCMI_PE)
+			if (op->address_mode == M68K_AM_MEMI_PRE_INDEX || op->address_mode == M68K_AM_PC_MEMI_PRE_INDEX)
 				SStream_concat(O, "]");
 
 			if (op->mem.out_disp > 0)

@@ -79,33 +79,33 @@ typedef enum m68k_reg {
 
 //> M68K Addressing Modes
 typedef enum m68k_adress_mode {
-	M68K_AM_NONE,				// No address mode. 
+	M68K_AM_NONE,					// No address mode. 
 
-	M68K_RD_DATA,				// Register Direct - Data
-	M68K_RD_ADDRESS,			// Register Direct - Address
+	M68K_AM_REG_DIRECT_DATA,		// Register Direct - Data
+	M68K_AM_REG_DIRECT_ADDR,		// Register Direct - Address
 
-	M68K_RI_ADDRESS,			// Register Indirect - Address
-	M68K_RI_ADDRESS_PI,			// Register Indirect - Address with Postincrement
-	M68K_RI_ADDRESS_PD,			// Register Indirect - Address with Predecrement
-	M68K_RI_ADDRESS_D,			// Register Indirect - Address with Displacement
+	M68K_AM_REGI_ADDR,				// Register Indirect - Address
+	M68K_AM_REGI_ADDR_POST_INC,		// Register Indirect - Address with Postincrement
+	M68K_AM_REGI_ADDR_PRE_DEC,		// Register Indirect - Address with Predecrement
+	M68K_AM_REGI_ADDR_DISP,			// Register Indirect - Address with Displacement
 
-	M68K_ARIWI_8_BIT,			// Address Register Indirect With Index- 8-bit displacement
-	M68K_ARIWI_BASE,			// Address Register Indirect With Index- Base displacement
+	M68K_AM_AREGI_INDEX_8_BIT_DISP,	// Address Register Indirect With Index- 8-bit displacement
+	M68K_AM_AREGI_INDEX_BASE_DISP,	// Address Register Indirect With Index- Base displacement
 
-	M68K_MI_PI,					// Memory indirect - Postindex
-	M68K_MI_PE,					// Memory indirect - Preindex
+	M68K_AM_MEMI_POST_INDEX,		// Memory indirect - Postindex
+	M68K_AM_MEMI_PRE_INDEX,			// Memory indirect - Preindex
 
-	M68K_PCI_DISP,				// Program Counter Indirect - with Displacement
+	M68K_AM_PCI_DISP,				// Program Counter Indirect - with Displacement
 
-	M68K_PCIIWI_8_BIT,			// Program Counter Indirect with Index - with 8-Bit Displacement
-	M68K_PCIIWI_BASE,			// Program Counter Indirect with Index - with Base Displacement
+	M68K_AM_PCI_INDEX_8_BIT_DISP,	// Program Counter Indirect with Index - with 8-Bit Displacement
+	M68K_AM_PCI_INDEX_BASE_DISP,	// Program Counter Indirect with Index - with Base Displacement
 
-	M68K_PCMI_PI,				// Program Counter Memory Indirect - Postindexed
-	M68K_PCMI_PE,				// Program Counter Memory Indirect - Preindexed
+	M68K_AM_PC_MEMI_POST_INDEX,		// Program Counter Memory Indirect - Postindexed
+	M68K_AM_PC_MEMI_PRE_INDEX,		// Program Counter Memory Indirect - Preindexed
 
-	M68K_ADA_SHORT,				// Absolute Data Addressing  - Short
-	M68K_ADA_LONG,				// Absolute Data Addressing  - Long
-	M68K_IMMIDIATE,				// Immidate value
+	M68K_AM_ABSOLUTE_DATA_SHORT,	// Absolute Data Addressing  - Short
+	M68K_AM_ABSOLUTE_DATA_LONG,		// Absolute Data Addressing  - Long
+	M68K_AM_IMMIDIATE,				// Immidate value
 
 } m68k_adress_mode; 
 
