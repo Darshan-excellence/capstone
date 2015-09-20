@@ -505,45 +505,6 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 	}
 }
 
-
-/* ======================================================================== */
-/* ========================= INSTRUCTION HANDLERS ========================= */
-/* ======================================================================== */
-/* Instruction handler function names follow this convention:
- *
- * d68000_NAME_EXTENSIONS(void)
- * where NAME is the name of the opcode it handles and EXTENSIONS are any
- * extensions for special instances of that opcode.
- *
- * Examples:
- *   d68000_add_er_8(): add opcode, from effective address to register,
- *                      size = byte
- *
- *   d68000_asr_s_8(): arithmetic shift right, static count, size = byte
- *
- *
- * Common extensions:
- * 8   : size = byte
- * 16  : size = word
- * 32  : size = long
- * rr  : register to register
- * mm  : memory to memory
- * r   : register
- * s   : static
- * er  : effective address -> register
- * re  : register -> effective address
- * ea  : using effective address mode of operation
- * d   : data register direct
- * a   : address register direct
- * ai  : address register indirect
- * pi  : address register indirect with postincrement
- * pd  : address register indirect with predecrement
- * di  : address register indirect with displacement
- * ix  : address register indirect with index
- * aw  : absolute word
- * al  : absolute long
- */
-
 static cs_m68k* build_init_op(int opcode, int count, int size)
 {
 	MCInst_setOpcode(g_inst, opcode);
@@ -1144,6 +1105,47 @@ static void build_er_a_1(int opcode, uint8_t size)
 {
 	build_er_gen_1(false, opcode, size);
 }
+
+
+/* ======================================================================== */
+/* ========================= INSTRUCTION HANDLERS ========================= */
+/* ======================================================================== */
+/* Instruction handler function names follow this convention:
+ *
+ * d68000_NAME_EXTENSIONS(void)
+ * where NAME is the name of the opcode it handles and EXTENSIONS are any
+ * extensions for special instances of that opcode.
+ *
+ * Examples:
+ *   d68000_add_er_8(): add opcode, from effective address to register,
+ *                      size = byte
+ *
+ *   d68000_asr_s_8(): arithmetic shift right, static count, size = byte
+ *
+ *
+ * Common extensions:
+ * 8   : size = byte
+ * 16  : size = word
+ * 32  : size = long
+ * rr  : register to register
+ * mm  : memory to memory
+ * r   : register
+ * s   : static
+ * er  : effective address -> register
+ * re  : register -> effective address
+ * ea  : using effective address mode of operation
+ * d   : data register direct
+ * a   : address register direct
+ * ai  : address register indirect
+ * pi  : address register indirect with postincrement
+ * pd  : address register indirect with predecrement
+ * di  : address register indirect with displacement
+ * ix  : address register indirect with index
+ * aw  : absolute word
+ * al  : absolute long
+ */
+
+
 
 static void d68000_illegal(void)
 {
