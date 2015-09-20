@@ -917,10 +917,10 @@ static void build_re_gen_1(bool isDreg, int opcode, uint8_t size)
 	
 	if (isDreg) {
 		op0->address_mode = M68K_RD_DATA;
-		op0->reg = M68K_REG_D0 + (g_cpu_ir >> 9 ) & 7;
+		op0->reg = M68K_REG_D0 + ((g_cpu_ir >> 9 ) & 7);
 	} else {
 		op0->address_mode = M68K_RD_ADDRESS;
-		op0->reg = M68K_REG_A0 + (g_cpu_ir >> 9 ) & 7;
+		op0->reg = M68K_REG_A0 + ((g_cpu_ir >> 9 ) & 7);
 	}
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
@@ -2131,7 +2131,7 @@ static void d68020_bsr_32(void)
 
 static void d68000_btst_r(void)
 {
-	build_re_1(M68K_INS_BTST, 1);
+	build_re_1(M68K_INS_BTST, 4);
 	//sprintf(g_dasm_str, "btst    D%d, %s", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
