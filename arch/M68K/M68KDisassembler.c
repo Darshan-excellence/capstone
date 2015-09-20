@@ -89,6 +89,22 @@ unsigned int m68k_read_disassembler_32(uint64_t address)
 	return (v0 << 24) | (v1 << 16) | (v2 << 8) | v3;
 }
 
+uint64_t m68k_read_disassembler_64(uint64_t address)
+{
+	address -= s_baseAddress;
+
+	uint64_t v0 = s_disassemblyBuffer[address + 0];
+	uint64_t v1 = s_disassemblyBuffer[address + 1];
+	uint64_t v2 = s_disassemblyBuffer[address + 2];
+	uint64_t v3 = s_disassemblyBuffer[address + 3];
+	uint64_t v4 = s_disassemblyBuffer[address + 4];
+	uint64_t v5 = s_disassemblyBuffer[address + 5];
+	uint64_t v6 = s_disassemblyBuffer[address + 6];
+	uint64_t v7 = s_disassemblyBuffer[address + 7];
+
+	return (v0 << 56) | (v1 << 48) | (v2 << 40) | (v3 << 32) | (v4 << 24) | (v5 << 16) | (v6 << 8) | v7;
+}
+
 const char* getRegName(m68k_reg reg)
 {
 	return s_reg_names[(int)reg];
@@ -153,7 +169,7 @@ static void registerPair(SStream* O, const cs_m68k_op* op)
 							   s_reg_names[M68K_REG_D0 + (op->register_bits & 0xf)]);
 }
 
-void printAddressingMode(SStream* O, const cs_m68k_op* op)
+void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 {
 	switch (op->address_mode)
 	{
@@ -196,7 +212,23 @@ void printAddressingMode(SStream* O, const cs_m68k_op* op)
 		case M68K_PCI_DISP : SStream_concat(O, "$%x(pc)", op->mem.disp); break;
 		case M68K_ADA_SHORT : SStream_concat(O, "$%x.w", op->imm); break; 
 		case M68K_ADA_LONG : SStream_concat(O, "$%x.l", op->imm); break; 
-		case M68K_IMMIDIATE : SStream_concat(O, "#$%x", op->imm); break; 
+		case M68K_IMMIDIATE : 
+		{
+			if (inst->op_size.type == M68K_SIZE_TYPE_FPU) {
+				if (inst->op_size.fpu_size == M68K_FPU_SIZE_SINGLE)
+					SStream_concat(O, "#%f", op->simm);
+				else if (inst->op_size.fpu_size == M68K_FPU_SIZE_DOUBLE)
+					SStream_concat(O, "#%f", op->dimm);
+				else
+					SStream_concat(O, "#<unsupported>");
+
+				break;
+			}
+
+			SStream_concat(O, "#$%x", op->imm);
+			break;
+		}
+							 
 		case M68K_PCIIWI_8_BIT : 
 		{
 			SStream_concat(O, "$%x(pc,%s)", op->mem.disp, getRegName(op->mem.index_reg)); 
@@ -316,8 +348,8 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	if (MI->Opcode == M68K_INS_CAS2)
 	{
-		printAddressingMode(O, &info->operands[0]); SStream_concat0(O, ",");
-		printAddressingMode(O, &info->operands[1]); SStream_concat0(O, ",");
+		printAddressingMode(O, info, &info->operands[0]); SStream_concat0(O, ",");
+		printAddressingMode(O, info, &info->operands[1]); SStream_concat0(O, ",");
 
 		int reg_value_0 = info->operands[2].register_bits >> 4;
 		int reg_value_1 = info->operands[2].register_bits & 0xf;
@@ -329,7 +361,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	for (int i  = 0; i < op_count; ++i)
 	{
-		printAddressingMode(O, &info->operands[i]);
+		printAddressingMode(O, info, &info->operands[i]);
 
 		if ((i + 1) != op_count)
 			SStream_concat0(O, ",");

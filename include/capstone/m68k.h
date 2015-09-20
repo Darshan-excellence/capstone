@@ -136,7 +136,7 @@ typedef struct m68k_op_mem {
 typedef struct cs_m68k_op {
 	union {
 		uint64_t imm;           // immediate value for IMM operand
-		double fimm; 		    // double imm
+		double dimm; 		    // double imm
 		float simm; 		    // float imm
 		m68k_reg reg;		    // register value for REG operand
 		m68k_op_mem mem; 	    // data when operand is targeting memory

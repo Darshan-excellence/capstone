@@ -283,6 +283,7 @@ static char* g_cpcc[64] =
 #define read_imm_8()  (m68k_read_disassembler_16(((g_cpu_pc+=2)-2)&g_address_mask)&0xff)
 #define read_imm_16() m68k_read_disassembler_16(((g_cpu_pc+=2)-2)&g_address_mask)
 #define read_imm_32() m68k_read_disassembler_32(((g_cpu_pc+=4)-4)&g_address_mask)
+#define read_imm_64() m68k_read_disassembler_64(((g_cpu_pc+=8)-8)&g_address_mask)
 
 #define peek_imm_8()  (m68k_read_disassembler_16(g_cpu_pc & g_address_mask)&0xff)
 #define peek_imm_16() m68k_read_disassembler_16(g_cpu_pc & g_address_mask)
@@ -834,10 +835,12 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 
 			if (size == 1)
 				op->imm = read_imm_8() & 0xff;
-			else if(size == 2)
+			else if (size == 2)
 				op->imm = read_imm_16() & 0xffff;
+			else if (size == 4)
+				op->imm = read_imm_32();
 			else
-				op->imm = read_imm_32() & 0xffffffff;
+				op->imm = read_imm_64();
 
 			break;
 		}
@@ -2533,13 +2536,32 @@ static void d68020_cpgen(void)
 	if (rm == 1) {
 		switch (src)
 		{
-			case 0x00 : info->op_size.cpu_size = M68K_CPU_SIZE_LONG; break; // long
-			case 0x06 : info->op_size.cpu_size = M68K_CPU_SIZE_BYTE; break; // byte
-			case 0x04 : info->op_size.cpu_size = M68K_CPU_SIZE_WORD; break; // word
+			case 0x00 : 
+			{
+				info->op_size.cpu_size = M68K_CPU_SIZE_LONG; 
+				get_ea_mode_op(op0, g_cpu_ir, 4);
+				break;
+			}
+
+			case 0x06 : 
+			{
+				info->op_size.cpu_size = M68K_CPU_SIZE_BYTE; 
+				get_ea_mode_op(op0, g_cpu_ir, 1);
+				break; 
+			}
+
+			case 0x04 : 
+			{
+				info->op_size.cpu_size = M68K_CPU_SIZE_WORD; 
+				get_ea_mode_op(op0, g_cpu_ir, 2);
+				break;
+			}
+
 			case 0x01 : 
 			{
 				info->op_size.type = M68K_SIZE_TYPE_FPU;
 				info->op_size.fpu_size = M68K_FPU_SIZE_SINGLE; 
+				get_ea_mode_op(op0, g_cpu_ir, 4);
 				break;
 			}
 
@@ -2547,6 +2569,7 @@ static void d68020_cpgen(void)
 			{
 				info->op_size.type = M68K_SIZE_TYPE_FPU;
 				info->op_size.fpu_size = M68K_FPU_SIZE_DOUBLE; 
+				get_ea_mode_op(op0, g_cpu_ir, 8);
 				break;
 			}
 
@@ -2559,7 +2582,6 @@ static void d68020_cpgen(void)
 		}
 
 		// TODO: Use size here
-		get_ea_mode_op(op0, g_cpu_ir, 4);
 	} else {
 		op0->reg = M68K_REG_FP0 + src; 
 	}
