@@ -16,6 +16,8 @@
 
 #include "M68Kdasm.h"
 
+#ifndef CAPSTONE_DIET
+
 static const char* s_reg_names[] =
 {
 	"invalid",
@@ -56,9 +58,7 @@ static const char* s_instruction_names[] = {
 	"trapcc", "traphs", "trapcs", "traplo", "trapne", "trapeq", "trapvc", "trapvs", "trappl", "trapmi", "trapge", "traplt", "trapgt", "traple", "tst", "unlk", "unpk",
 };
 
-void M68K_init(MCRegisterInfo *MRI)
-{
-}
+#endif
 
 static uint8_t* s_disassemblyBuffer;
 static uint32_t s_baseAddress;
@@ -106,6 +106,8 @@ uint64_t m68k_read_disassembler_64(uint64_t address)
 
 	return (v0 << 56) | (v1 << 48) | (v2 << 40) | (v3 << 32) | (v4 << 24) | (v5 << 16) | (v6 << 8) | v7;
 }
+
+#ifndef CAPSTONE_DIET
 
 const char* getRegName(m68k_reg reg)
 {
@@ -298,8 +300,11 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 		SStream_concat(O, "{%d:%d}", op->mem.offset, op->mem.width);
 }
 
+#endif
+
 void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 {
+#ifndef CAPSTONE_DIET
 	cs_m68k* info = &MI->flat_insn->detail->m68k;
 
 	const int op_count = info->op_count;
@@ -358,6 +363,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 		if ((i + 1) != op_count)
 			SStream_concat0(O, ",");
 	}
+#endif
 }
 
 bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* instr, uint16_t* size, uint64_t address, void* info)
@@ -393,7 +399,11 @@ bool M68K_getInstruction(csh ud, const uint8_t* code, size_t code_len, MCInst* i
 
 const char* M68K_reg_name(csh handle, unsigned int reg)
 {
+#ifdef CAPSTONE_DIET
+	return 0;
+#else
 	return s_reg_names[(int)reg];
+#endif
 }
 
 void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
@@ -403,15 +413,15 @@ void M68K_get_insn_id(cs_struct* h, cs_insn* insn, unsigned int id)
 
 const char* M68K_insn_name(csh handle, unsigned int id)
 {
+#ifdef CAPSTONE_DIET
+	return 0;
+#else
 	return s_instruction_names[id];
+#endif
 }
 
 const char* M68K_group_name(csh handle, unsigned int id)
 {
 	return 0;
-}
-
-void M68K_post_printer(csh handle, cs_insn* flat_insn, char* insn_asm, MCInst* mci)
-{
 }
 
