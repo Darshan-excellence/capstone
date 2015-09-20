@@ -27,6 +27,9 @@
  * THE SOFTWARE.
  */
 
+ /* The code bellow is based on MMUSASH but has been heavily modified for capstore by
+  * Daniel Collin <daniel@collin.com> 2015 */
+
 /* ======================================================================== */
 /* ================================ INCLUDES ============================== */
 /* ======================================================================== */

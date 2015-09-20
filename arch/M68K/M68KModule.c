@@ -1,5 +1,6 @@
 /* Capstone Disassembly Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2014 */
+/* M68K Backend by Daniel Collin <daniel@collin.com> 2015 */
 
 #ifdef CAPSTONE_HAS_M68K
 
@@ -9,17 +10,11 @@
 
 static cs_err init(cs_struct *ud)
 {
-	MCRegisterInfo *mri;
-
-	mri = cs_mem_malloc(sizeof(MCRegisterInfo));
-
-	M68K_init(mri);
-
 	ud->printer = M68K_printInst;
-	ud->printer_info = mri;
-	ud->getinsn_info = mri;
+	ud->printer_info = 0;
+	ud->getinsn_info = 0;
 	ud->disasm = M68K_getInstruction;
-	ud->post_printer = M68K_post_printer;
+	ud->post_printer = 0;
 
 	ud->reg_name = M68K_reg_name;
 	ud->insn_id = M68K_get_insn_id;
