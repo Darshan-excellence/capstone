@@ -130,6 +130,9 @@
 #define EXT_OUTER_DISPLACEMENT_WORD(A)    (((A)&3) == 2 && ((A)&0x47) < 0x44)
 #define EXT_OUTER_DISPLACEMENT_LONG(A)    (((A)&3) == 3 && ((A)&0x47) < 0x44)
 
+#define IS_BITSET(val,b) ((val) & (1 << (b)))
+#define BITFIELD_MASK(sb,eb)  (((1 << ((sb) + 1))-1) & (~((1 << (eb))-1)))
+#define BITFIELD(val,sb,eb) ((BITFIELD_MASK(sb,eb) & (val)) >> (eb))
 
 
 /* ======================================================================== */
@@ -244,6 +247,13 @@ static m68k_insn s_trap_lut[] = {
 	M68K_INS_TRAPGE, M68K_INS_TRAPLT, M68K_INS_TRAPGT, M68K_INS_TRAPLE,
 };
 
+static const char *const fpcc_table[32] = {
+	"f", "eq", "ogt", "oge", "olt", "ole", "ogl", "or",
+	"un", "ueq", "ugt", "uge", "ult", "ule", "ne", "t",
+	"sf", "seq", "gt", "ge", "lt", "le", "gl", "gle",
+	"ngle", "ngl", "nle", "nlt", "nge", "ngt", "sne", "st" };
+
+
 static char* g_cpcc[64] =
 {/* 000    001    010    011    100    101    110    111 */
 	  "f",  "eq", "ogt", "oge", "olt", "ole", "ogl",  "or", /* 000 */
@@ -255,6 +265,8 @@ static char* g_cpcc[64] =
 	  "?",   "?",   "?",   "?",   "?",   "?",   "?",   "?", /* 110 */
 	  "?",   "?",   "?",   "?",   "?",   "?",   "?",   "?"  /* 111 */
 };
+
+
 
 
 /* ======================================================================== */
@@ -1595,144 +1607,6 @@ static void d68000_illegal(void)
 	//sprintf(g_dasm_str, "dc.w $%04x; ILLEGAL", g_cpu_ir);
 }
 
-static void fpu_alu_op(int next)
-{
-	bool supports_single_op = true;
-
-	int rm = (next >> 14) & 0x1;
-	int src = (next >> 10) & 0x7;
-	int dst = (next >> 7) & 0x7;
-	int opmode = next & 0x3f;
-
-	// Se comment bellow on why this is being done
-
-	if ((next >> 6) & 1)
-		opmode &= ~4;
-
-	switch (opmode)
-	{
-		case 0x00: MCInst_setOpcode(g_inst, M68K_INS_FMOVE); supports_single_op = false; break;
-		case 0x01: MCInst_setOpcode(g_inst, M68K_INS_FINT); break; 
-		case 0x03: MCInst_setOpcode(g_inst, M68K_INS_FINTRZ); break;
-		case 0x04: MCInst_setOpcode(g_inst, M68K_INS_FSQRT); break;
-		case 0x06: MCInst_setOpcode(g_inst, M68K_INS_FLOGNP1); break;
-		case 0x08: MCInst_setOpcode(g_inst, M68K_INS_FETOXM1); break;
-		case 0x0a: MCInst_setOpcode(g_inst, M68K_INS_FATAN); break;
-		case 0x0c: MCInst_setOpcode(g_inst, M68K_INS_FASIN); break; 
-		case 0x0d: MCInst_setOpcode(g_inst, M68K_INS_FATANH); break;
-		case 0x0e: MCInst_setOpcode(g_inst, M68K_INS_FSIN); break;
-		case 0x0f: MCInst_setOpcode(g_inst, M68K_INS_FTAN); break;
-		case 0x10: MCInst_setOpcode(g_inst, M68K_INS_FETOX); break;
-		case 0x14: MCInst_setOpcode(g_inst, M68K_INS_FLOGN); break;
-		case 0x15: MCInst_setOpcode(g_inst, M68K_INS_FLOG10); break;
-		case 0x16: MCInst_setOpcode(g_inst, M68K_INS_FLOG2); break;
-		case 0x18: MCInst_setOpcode(g_inst, M68K_INS_FABS); break;
-		case 0x19: MCInst_setOpcode(g_inst, M68K_INS_FCOSH); break;
-		case 0x1a: MCInst_setOpcode(g_inst, M68K_INS_FNEG); break;
-		case 0x1c: MCInst_setOpcode(g_inst, M68K_INS_FACOS); break; 
-		case 0x1d: MCInst_setOpcode(g_inst, M68K_INS_FCOS); break;
-		case 0x1e: MCInst_setOpcode(g_inst, M68K_INS_FGETEXP); break;
-		case 0x1f: MCInst_setOpcode(g_inst, M68K_INS_FGETMAN); break;
-		case 0x20: MCInst_setOpcode(g_inst, M68K_INS_FDIV); supports_single_op = false; break;
-		case 0x21: MCInst_setOpcode(g_inst, M68K_INS_FMOD); supports_single_op = false; break;
-		case 0x22: MCInst_setOpcode(g_inst, M68K_INS_FADD); supports_single_op = false; break;
-		case 0x23: MCInst_setOpcode(g_inst, M68K_INS_FMUL); supports_single_op = false; break;
-		case 0x24: MCInst_setOpcode(g_inst, M68K_INS_FSGLDIV); supports_single_op = false; break;
-		case 0x25: MCInst_setOpcode(g_inst, M68K_INS_FREM); break;
-		case 0x27: MCInst_setOpcode(g_inst, M68K_INS_FSGLMUL); break;
-		case 0x28: MCInst_setOpcode(g_inst, M68K_INS_FSUB); supports_single_op = false; break;
-		case 0x38: MCInst_setOpcode(g_inst, M68K_INS_FCMP); supports_single_op = false; break;
-		case 0x3a: MCInst_setOpcode(g_inst, M68K_INS_FTST); break;
-		default:	
-			break;
-	}
-
-	// Some trickery here! It's not documented but if bit 6 is set this is a s/d opcode and then
-	// if bit 2 is set it's a d. As we already have set our opcode in the code above we can just
-	// offset it as the following 2 op codes (if s/d is supported) will always be directly after it
-
-	if ((next >> 6) & 1) {
-		if ((next >> 2) & 1)
-			g_inst->Opcode += 2;
-		else
-			g_inst->Opcode += 1;
-	}
-
-	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
-
-	info->op_count = 2;
-	info->op_size = 0; 
-
-	cs_m68k_op* op0 = &info->operands[0];
-	cs_m68k_op* op1 = &info->operands[1];
-
-	if (rm == 0 && supports_single_op && src == dst) {
-		info->op_count = 1;
-		op0->reg = M68K_REG_FP0 + dst;
-		return;
-	}
-
-	if (rm == 1) {
-		// TODO: Use size here
-		get_ea_mode_op(op0, g_cpu_ir, 4);
-	} else {
-		op0->reg = M68K_REG_FP0 + src; 
-	}
-
-	op1->reg = M68K_REG_FP0 + dst;
-	//printf("rm %d - src %d - dst %d\n", rm, src, dst);
-}
-
-// FPU decoding
-
-static void d68000_fpu(void)
-{
-	LIMIT_CPU_TYPES(M68040_PLUS);
-
-	// figure out the type of instruction
-
-	switch ((g_cpu_ir >> 6) & 3)
-	{
-		case 0:
-		{
-			uint next = read_imm_16();
-
-			switch ((next >> 13) & 0x7)
-			{
-				case 0: 
-				case 2:
-				{
-					fpu_alu_op(next);
-					break;
-				}
-			}
-
-			break;
-		}
-
-		case 1:
-		{
-			printf("fbcc 16\n");
-			break;
-		}
-
-		case 2:		// FBcc disp16
-		{
-			printf("fbcc 16\n");
-			break;
-		}
-		case 3:		// FBcc disp32
-		{
-			printf("fbcc 32\n");
-			break;
-		}
-
-		default:	
-			build_illegal((g_cpu_ir >> 6) & 0x3);
-	}
-}
-
-
 static void d68000_1010(void)
 {
 	build_illegal(g_cpu_ir);
@@ -1745,13 +1619,11 @@ static void d68000_1111(void)
 	//sprintf(g_dasm_str, "dc.w    $%04x; opcode 1111", g_cpu_ir);
 }
 
-
 static void d68000_abcd_rr(void)
 {
 	build_rr(M68K_INS_ABCD, 1, 0); 
 	//sprintf(g_dasm_str, "abcd    D%d, D%d", g_cpu_ir&7, (g_cpu_ir>>9)&7);
 }
-
 
 static void d68000_abcd_mm(void)
 {
@@ -2604,7 +2476,22 @@ static void d68000_cmpm_32(void)
 
 static void d68020_cpbcc_16(void)
 {
-	build_illegal(g_cpu_ir);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+
+	uint new_pc = g_cpu_pc;
+	new_pc += make_int_16(read_imm_16());
+
+	cs_m68k* info = build_init_op(M68K_INS_FBF, 1, 2);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (g_cpu_ir & 0x2f); 
+
+	cs_m68k_op* op0 = &info->operands[0];
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->type = M68K_OP_IMM;
+	op0->imm = new_pc;
+
 	/*
 	uint extension;
 	uint new_pc = g_cpu_pc;
@@ -2617,11 +2504,27 @@ static void d68020_cpbcc_16(void)
 
 static void d68020_cpbcc_32(void)
 {
-	build_illegal(g_cpu_ir);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+
+	LIMIT_CPU_TYPES(M68020_PLUS);
+
+	uint new_pc = g_cpu_pc;
+	new_pc += read_imm_32();
+
+	cs_m68k* info = build_init_op(M68K_INS_FBF, 1, 4);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (g_cpu_ir & 0x2f); 
+
+	cs_m68k_op* op0 = &info->operands[0];
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->type = M68K_OP_IMM;
+	op0->imm = new_pc;
+
 /*
 	uint extension;
 	uint new_pc = g_cpu_pc;
-	LIMIT_CPU_TYPES(M68020_PLUS);
 	extension = read_imm_16();
 	new_pc += peek_imm_32();
 	sprintf(g_dasm_str, "%db%-4s  %s; %x (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[g_cpu_ir&0x3f], get_imm_str_s16(), new_pc, extension);
@@ -2630,7 +2533,30 @@ static void d68020_cpbcc_32(void)
 
 static void d68020_cpdbcc(void)
 {
-	build_illegal(g_cpu_ir);
+	//printf("d68020_cpbcc_32\n");
+	//build_illegal(g_cpu_ir);
+	
+	LIMIT_CPU_TYPES(M68020_PLUS);
+
+	uint new_pc = g_cpu_pc;
+	uint ext1 = read_imm_16();
+	uint ext2 = read_imm_16();
+	new_pc += make_int_16(ext2) + 2;
+
+	cs_m68k* info = build_init_op(M68K_INS_FDBF, 2, 0);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (ext1 & 0x2f); 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	op0->reg = M68K_REG_D0 + (g_cpu_ir & 7);
+
+	op1->address_mode = M68K_IMMIDIATE;
+	op1->type = M68K_OP_IMM;
+	op1->imm = new_pc;
+
 /*
 	uint extension1;
 	uint extension2;
@@ -2645,28 +2571,131 @@ static void d68020_cpdbcc(void)
 
 static void d68020_cpgen(void)
 {
-	build_illegal(g_cpu_ir);
-	//LIMIT_CPU_TYPES(M68020_PLUS);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	
+	bool supports_single_op = true;
+
+	uint next = read_imm_16();
+
+	int rm = (next >> 14) & 0x1;
+	int src = (next >> 10) & 0x7;
+	int dst = (next >> 7) & 0x7;
+	int opmode = next & 0x3f;
+
+	// Se comment bellow on why this is being done
+
+	if ((next >> 6) & 1)
+		opmode &= ~4;
+
+	switch (opmode)
+	{
+		case 0x00: MCInst_setOpcode(g_inst, M68K_INS_FMOVE); supports_single_op = false; break;
+		case 0x01: MCInst_setOpcode(g_inst, M68K_INS_FINT); break; 
+		case 0x02: MCInst_setOpcode(g_inst, M68K_INS_FSINH); break;
+		case 0x03: MCInst_setOpcode(g_inst, M68K_INS_FINTRZ); break;
+		case 0x04: MCInst_setOpcode(g_inst, M68K_INS_FSQRT); break;
+		case 0x06: MCInst_setOpcode(g_inst, M68K_INS_FLOGNP1); break;
+		case 0x08: MCInst_setOpcode(g_inst, M68K_INS_FETOXM1); break;
+		case 0x09: MCInst_setOpcode(g_inst, M68K_INS_FATANH); break;
+		case 0x0a: MCInst_setOpcode(g_inst, M68K_INS_FATAN); break;
+		case 0x0c: MCInst_setOpcode(g_inst, M68K_INS_FASIN); break; 
+		case 0x0d: MCInst_setOpcode(g_inst, M68K_INS_FATANH); break;
+		case 0x0e: MCInst_setOpcode(g_inst, M68K_INS_FSIN); break;
+		case 0x0f: MCInst_setOpcode(g_inst, M68K_INS_FTAN); break;
+		case 0x10: MCInst_setOpcode(g_inst, M68K_INS_FETOX); break;
+		case 0x11: MCInst_setOpcode(g_inst, M68K_INS_FTWOTOX); break;
+		case 0x12: MCInst_setOpcode(g_inst, M68K_INS_FTENTOX); break;
+		case 0x14: MCInst_setOpcode(g_inst, M68K_INS_FLOGN); break;
+		case 0x15: MCInst_setOpcode(g_inst, M68K_INS_FLOG10); break;
+		case 0x16: MCInst_setOpcode(g_inst, M68K_INS_FLOG2); break;
+		case 0x18: MCInst_setOpcode(g_inst, M68K_INS_FABS); break;
+		case 0x19: MCInst_setOpcode(g_inst, M68K_INS_FCOSH); break;
+		case 0x1a: MCInst_setOpcode(g_inst, M68K_INS_FNEG); break;
+		case 0x1c: MCInst_setOpcode(g_inst, M68K_INS_FACOS); break; 
+		case 0x1d: MCInst_setOpcode(g_inst, M68K_INS_FCOS); break;
+		case 0x1e: MCInst_setOpcode(g_inst, M68K_INS_FGETEXP); break;
+		case 0x1f: MCInst_setOpcode(g_inst, M68K_INS_FGETMAN); break;
+		case 0x20: MCInst_setOpcode(g_inst, M68K_INS_FDIV); supports_single_op = false; break;
+		case 0x21: MCInst_setOpcode(g_inst, M68K_INS_FMOD); supports_single_op = false; break;
+		case 0x22: MCInst_setOpcode(g_inst, M68K_INS_FADD); supports_single_op = false; break;
+		case 0x23: MCInst_setOpcode(g_inst, M68K_INS_FMUL); supports_single_op = false; break;
+		case 0x24: MCInst_setOpcode(g_inst, M68K_INS_FSGLDIV); supports_single_op = false; break;
+		case 0x25: MCInst_setOpcode(g_inst, M68K_INS_FREM); break;
+		case 0x26: MCInst_setOpcode(g_inst, M68K_INS_FSCALE); break;
+		case 0x27: MCInst_setOpcode(g_inst, M68K_INS_FSGLMUL); break;
+		case 0x28: MCInst_setOpcode(g_inst, M68K_INS_FSUB); supports_single_op = false; break;
+		case 0x38: MCInst_setOpcode(g_inst, M68K_INS_FCMP); supports_single_op = false; break;
+		case 0x3a: MCInst_setOpcode(g_inst, M68K_INS_FTST); break;
+		default:	
+			break;
+	}
+
+	// Some trickery here! It's not documented but if bit 6 is set this is a s/d opcode and then
+	// if bit 2 is set it's a d. As we already have set our opcode in the code above we can just
+	// offset it as the following 2 op codes (if s/d is supported) will always be directly after it
+
+	if ((next >> 6) & 1) {
+		if ((next >> 2) & 1)
+			g_inst->Opcode += 2;
+		else
+			g_inst->Opcode += 1;
+	}
+
+	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
+
+	info->op_count = 2;
+	info->op_size = 0; 
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+
+	if (rm == 0 && supports_single_op && src == dst) {
+		info->op_count = 1;
+		op0->reg = M68K_REG_FP0 + dst;
+		return;
+	}
+
+	if (rm == 1) {
+		// TODO: Use size here
+		get_ea_mode_op(op0, g_cpu_ir, 4);
+	} else {
+		op0->reg = M68K_REG_FP0 + src; 
+	}
+
+	op1->reg = M68K_REG_FP0 + dst;
+	//printf("rm %d - src %d - dst %d\n", rm, src, dst);
+	
+	
 	//sprintf(g_dasm_str, "%dgen    %s; (2-3)", (g_cpu_ir>>9)&7, get_imm_str_u32());
 }
 
 static void d68020_cprestore(void)
 {
-	build_illegal(g_cpu_ir);
-	//LIMIT_CPU_TYPES(M68020_PLUS);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	cs_m68k* info = build_init_op(M68K_INS_FRESTORE, 1, 0);
+	get_ea_mode_op(&info->operands[0], g_cpu_ir, 1);
+
 	//sprintf(g_dasm_str, "%drestore %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cpsave(void)
 {
-	build_illegal(g_cpu_ir);
-	//LIMIT_CPU_TYPES(M68020_PLUS);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	cs_m68k* info = build_init_op(M68K_INS_FSAVE, 1, 0);
+	get_ea_mode_op(&info->operands[0], g_cpu_ir, 1);
 	//sprintf(g_dasm_str, "%dsave   %s; (2-3)", (g_cpu_ir>>9)&7, get_ea_mode_str_8(g_cpu_ir));
 }
 
 static void d68020_cpscc(void)
 {
-	build_illegal(g_cpu_ir);
+	LIMIT_CPU_TYPES(M68020_PLUS);
+	cs_m68k* info = build_init_op(M68K_INS_FSF, 1, 1);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (read_imm_16() & 0x2f); 
+
+	get_ea_mode_op(&info->operands[0], g_cpu_ir, 1);
+
 /*
 	uint extension1;
 	uint extension2;
@@ -2679,41 +2708,62 @@ static void d68020_cpscc(void)
 
 static void d68020_cptrapcc_0(void)
 {
-	build_illegal(g_cpu_ir);
-/*
-	uint extension1;
-	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension1 = read_imm_16();
-	extension2 = read_imm_16();
-	sprintf(g_dasm_str, "%dtrap%-4s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], extension2);
-*/
+	//printf("cptrap\n");
+	uint extension1 = read_imm_16();
+	//uint extension2 = read_imm_16();
+
+	cs_m68k* info = build_init_op(M68K_INS_FTRAPF, 0, 0);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (extension1 & 0x2f); 
+
+	//sprintf(g_dasm_str, "%dtrap%-4s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], extension2);
+	//printf("dasm %s\n", g_dasm_str);
 }
 
 static void d68020_cptrapcc_16(void)
 {
-	build_illegal(g_cpu_ir);
-/*
-	uint extension1;
-	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension1 = read_imm_16();
-	extension2 = read_imm_16();
-	sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u16(), extension2);
-*/
+	//printf("cptrap 16\n");
+
+	//printf("cptrap\n");
+	uint extension1 = read_imm_16();
+	uint extension2 = read_imm_16();
+
+	cs_m68k* info = build_init_op(M68K_INS_FTRAPF, 1, 2);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (extension1 & 0x2f); 
+
+	cs_m68k_op* op0 = &info->operands[0];
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->type = M68K_OP_IMM;
+	op0->imm = extension2;
+
+	// sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u16(), extension2);
 }
 
 static void d68020_cptrapcc_32(void)
 {
-	build_illegal(g_cpu_ir);
-/*
-	uint extension1;
-	uint extension2;
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	extension1 = read_imm_16();
-	extension2 = read_imm_16();
-	sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u32(), extension2);
-*/
+
+	uint extension1 = read_imm_16();
+	uint extension2 = read_imm_32();
+
+	cs_m68k* info = build_init_op(M68K_INS_FTRAPF, 1, 2);
+
+	// these are all in row with the extension so just doing a add here is fine
+	g_inst->Opcode += (extension1 & 0x2f); 
+
+	cs_m68k_op* op0 = &info->operands[0];
+
+	op0->address_mode = M68K_IMMIDIATE;
+	op0->type = M68K_OP_IMM;
+	op0->imm = extension2;
+
+	// sprintf(g_dasm_str, "%dtrap%-4s %s; (extension = %x) (2-3)", (g_cpu_ir>>9)&7, g_cpcc[extension1&0x3f], get_imm_str_u32(), extension2);
 }
 
 static void d68040_cpush(void)
@@ -4414,7 +4464,6 @@ static void d68020_unpk_mm(void)
 static opcode_struct g_opcode_info[] =
 {
 /*  opcode handler    mask    match   ea mask */
-	{d68000_fpu          , 0xff00, 0xf200, 0x000},
 	{d68000_1010         , 0xf000, 0xa000, 0x000},
 	{d68000_1111         , 0xf000, 0xf000, 0x000},
 	{d68000_abcd_rr      , 0xf1f8, 0xc100, 0x000},
@@ -4880,7 +4929,7 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	g_helper_str[0] = 0;
 	g_cpu_ir = read_imm_16();
 	g_instruction_table[g_cpu_ir]();
-	printf("------------- %s\n", g_dasm_str);
+	//printf("------------- %s\n", g_dasm_str);
 	//sprintf(str_buff, "%s%s", g_dasm_str, g_helper_str);
 	return g_cpu_pc - pc;
 }
