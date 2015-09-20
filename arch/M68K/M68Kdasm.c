@@ -1238,10 +1238,10 @@ static void build_d(int opcode, int size)
 	op->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 }
 
-static uint reverse_bits(uint v)
+static uint16_t reverse_bits(uint v)
 {
 	uint r = v; // r will be reversed bits of v; first get LSB of v
-	int s = 16 - 1; // extra shift needed at end
+	uint s = 16 - 1; // extra shift needed at end
 
 	for (v >>= 1; v; v >>= 1)
 	{   
@@ -1253,6 +1253,22 @@ static uint reverse_bits(uint v)
 	return r <<= s; // shift when v's highest bits are zero
 }
 
+static uint8_t reverse_bits_8(uint v)
+{
+	uint r = v; // r will be reversed bits of v; first get LSB of v
+	uint s = 8 - 1; // extra shift needed at end
+
+	for (v >>= 1; v; v >>= 1)
+	{   
+		r <<= 1;
+		r |= v & 1;
+		s--;
+	}
+
+	return r <<= s; // shift when v's highest bits are zero
+}
+
+
 static void build_movem_re(int opcode, int size)
 {
 	cs_m68k* info = build_init_op(opcode, 2, size);
@@ -1261,7 +1277,7 @@ static void build_movem_re(int opcode, int size)
 	cs_m68k_op* op1 = &info->operands[1];
 
 	op0->type = M68K_OP_REG_BITS;
-	op0->register_bits = reverse_bits(read_imm_16()); 
+	op0->register_bits = reverse_bits(read_imm_16());
 
 	get_ea_mode_op(op1, g_cpu_ir, size);
 }
@@ -2447,6 +2463,79 @@ static void d68020_cpdbcc(void)
 */
 }
 
+static void fmove_fpcr(uint ext)
+{
+	int regsel = (ext >> 10) & 0x7;
+	int dir = (ext >> 13) & 0x1;
+
+	cs_m68k* info = build_init_op(M68K_INS_FMOVE, 2, 4);
+
+	cs_m68k_op* special = &info->operands[0];
+	cs_m68k_op* op_ea = &info->operands[1];
+
+	if (!dir) {
+		cs_m68k_op* t = special;
+		special = op_ea;
+		op_ea = t;
+	}
+
+	get_ea_mode_op(op_ea, g_cpu_ir, 4);
+
+	if (regsel & 4) 
+		special->reg = M68K_REG_FPCR; 
+	else if (regsel & 2) 
+		special->reg = M68K_REG_FPSR; 
+	else if (regsel & 1) 
+		special->reg = M68K_REG_FPIAR; 
+}
+
+static void fmovem(uint ext)
+{
+	int dir = (ext >> 13) & 0x1;
+	int mode = (ext >> 11) & 0x3;
+	uint reglist = ext & 0xff;
+
+	cs_m68k* info = build_init_op(M68K_INS_FMOVEM, 2, 0);
+
+	cs_m68k_op* op_reglist = &info->operands[0];
+	cs_m68k_op* op_ea = &info->operands[1];
+
+	// flip args around
+
+	if (!dir) {
+		cs_m68k_op* t = op_reglist;
+		op_reglist = op_ea;
+		op_ea = t;
+	}
+
+	get_ea_mode_op(op_ea, g_cpu_ir, 0);
+
+	switch (mode)
+	{
+		case 1 : // Dynamic list in dn register
+		{
+			op_reglist->reg = M68K_REG_D0 + ((reglist >> 4) & 7);
+			break;
+		}
+
+		case 0 : 
+		{
+			op_reglist->address_mode = M68K_AM_NONE;
+			op_reglist->type = M68K_OP_REG_BITS;
+			op_reglist->register_bits = reglist << 16; 
+			break;
+		}
+
+		case 2 : // Static list
+		{
+			op_reglist->address_mode = M68K_AM_NONE;
+			op_reglist->type = M68K_OP_REG_BITS;
+			op_reglist->register_bits = ((uint32_t)reverse_bits_8(reglist)) << 16; 
+			break;
+		}
+	}
+}
+
 static void d68020_cpgen(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
@@ -2474,6 +2563,29 @@ static void d68020_cpgen(void)
 
 		op1->reg = M68K_REG_FP0 + ((next >> 7) & 7);
 		return;
+	}
+
+	// deal with extended move stuff
+
+	switch ((next >> 13) & 0x7)
+	{
+		// fmovem fpcr
+
+		case 0x4:	// FMOVEM ea, FPCR
+		case 0x5:	// FMOVEM FPCR, ea
+		{
+			fmove_fpcr(next);
+			return;
+		}
+
+		// fmovem list
+
+		case 0x6:
+		case 0x7:
+		{
+			fmovem(next);
+			return;
+		}
 	}
 
 	// Se comment bellow on why this is being done

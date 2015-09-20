@@ -26,6 +26,8 @@ static const char* s_reg_names[] =
 	"sr", "ccr", "sfc", "dfc", "usp", "vbr", "cacr",
 	"caar", "msp", "isp", "tc", "itt0", "itt1", "dtt0",
 	"dtt1", "mmusr", "urp", "srp",
+
+	"fpcr", "fpsr", "fpiar", 
 };
 
 static const char* s_instruction_names[] = {
@@ -110,19 +112,17 @@ const char* getRegName(m68k_reg reg)
 	return s_reg_names[(int)reg];
 }
 
-static void registerBits(SStream* O, const cs_m68k_op* op)
+static void printRegbitsRange(char* buffer, uint32_t data, const char* prefix)
 {
-	char buffer[40];
-	unsigned int first;
-	unsigned int run_length;
-	unsigned int data = op->register_bits; 
+	unsigned int first = 0;
+	unsigned int run_length = 0;
 
-	buffer[0] = 0;
 	for (int i = 0; i < 8; ++i)
 	{
 		if (data & (1 << i)) {
 			first = i;
 			run_length = 0;
+
 			while (i < 7 && (data & (1 << (i + 1)))) {
 				i++;
 				run_length++;
@@ -131,31 +131,23 @@ static void registerBits(SStream* O, const cs_m68k_op* op)
 			if (buffer[0] != 0)
 				strcat(buffer, "/");
 
-			sprintf(buffer + strlen(buffer), "d%d", first);
+			sprintf(buffer + strlen(buffer), "%s%d", prefix, first);
 			if (run_length > 0)
-				sprintf(buffer + strlen(buffer), "-d%d", first + run_length);
+				sprintf(buffer + strlen(buffer), "-%s%d", prefix, first + run_length);
 		}
 	}
+}
 
-	for (int i = 0; i < 8; ++i) {
-		if (data & (1 << (i +8 ))) {
-			first = i;
-			run_length = 0;
+static void registerBits(SStream* O, const cs_m68k_op* op)
+{
+	char buffer[128] = { };
+	unsigned int data = op->register_bits; 
 
-			while(i < 7 && (data & (1 << (i + 8 + 1)))) {
-				i++;
-				run_length++;
-			}
+	buffer[0] = 0;
 
-			if (buffer[0] != 0)
-				strcat(buffer, "/");
-
-			sprintf(buffer + strlen(buffer), "a%d", first);
-
-			if (run_length > 0)
-				sprintf(buffer + strlen(buffer), "-a%d", first + run_length);
-		}
-	}
+	printRegbitsRange(buffer, data & 0xff, "d");
+	printRegbitsRange(buffer, (data >> 8) & 0xff, "a");
+	printRegbitsRange(buffer, (data >> 16) & 0xff, "fp");
 
 	SStream_concat(O, "%s", buffer);
 }

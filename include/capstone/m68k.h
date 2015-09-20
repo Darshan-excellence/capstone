@@ -69,6 +69,10 @@ typedef enum m68k_reg {
 	M68K_REG_URP,
 	M68K_REG_SRP,
 
+	M68K_REG_FPCR,
+	M68K_REG_FPSR,
+	M68K_REG_FPIAR,
+
 	M68K_REG_ENDING,   // <-- mark the end of the list of registers
 } m68k_reg;
 
@@ -140,7 +144,7 @@ typedef struct cs_m68k_op {
 		float simm; 		    // float imm
 		m68k_reg reg;		    // register value for REG operand
 		m68k_op_mem mem; 	    // data when operand is targeting memory
-		uint16_t register_bits; // register bits for movem/cas2/etc (always in d0-d7 - a0-a7 order)
+		uint32_t register_bits; // register bits for movem/cas2/etc (always in d0-d7, a0-a7, fp0 - fp7 order)
 	};
 	m68k_op_type type;
 	m68k_adress_mode address_mode;	// M68K addressing mode for this op 
