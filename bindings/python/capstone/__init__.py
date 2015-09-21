@@ -608,7 +608,7 @@ class CsInsn(object):
         if self._raw.id == 0:
             return default
 
-        return _ascii_name_or_default(_cs.cs_insn_name(self._cs.csh, self.id).decode('ascii'), default)
+        return _ascii_name_or_default(_cs.cs_insn_name(self._cs.csh, self.id), default)
 
     # get the group name
     def group_name(self, group_id, default=None):
