@@ -3706,6 +3706,7 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	if (info)
 	{
 		memset(info, 0, sizeof(cs_m68k));
+		info->op_size.type = M68K_SIZE_TYPE_CPU;
 
 		for (int i = 0; i < M68K_OPERAND_COUNT; ++i)
 			info->operands[i].type = M68K_OP_REG; 
