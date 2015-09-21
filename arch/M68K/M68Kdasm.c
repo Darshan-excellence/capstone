@@ -512,6 +512,7 @@ static cs_m68k* build_init_op(int opcode, int count, int size)
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	info->op_count = count;
+	info->op_size.type = M68K_SIZE_TYPE_CPU;
 	info->op_size.cpu_size = size; 
 
 	return info;
@@ -1986,6 +1987,7 @@ static void d68020_cpgen(void)
 	cs_m68k* info = &g_inst->flat_insn->detail->m68k;
 
 	info->op_count = 2;
+	info->op_size.type = M68K_SIZE_TYPE_CPU;
 	info->op_size.cpu_size = 0; 
 
 	cs_m68k_op* op0 = &info->operands[0];
@@ -3704,6 +3706,7 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	if (info)
 	{
 		memset(info, 0, sizeof(cs_m68k));
+		info->op_size.type = M68K_SIZE_TYPE_CPU;
 
 		for (int i = 0; i < M68K_OPERAND_COUNT; ++i)
 			info->operands[i].type = M68K_OP_REG; 

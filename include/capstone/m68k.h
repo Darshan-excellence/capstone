@@ -79,7 +79,7 @@ typedef enum m68k_reg {
 
 //> M68K Addressing Modes
 typedef enum m68k_adress_mode {
-	M68K_AM_NONE,					// No address mode. 
+	M68K_AM_NONE = 0,			// No address mode. 
 
 	M68K_AM_REG_DIRECT_DATA,		// Register Direct - Data
 	M68K_AM_REG_DIRECT_ADDR,		// Register Direct - Address
@@ -160,6 +160,7 @@ typedef enum m68k_cpu_size {
 
 // Operation size of the FPU instructions (Notice that FPU instruction can also use CPU sizes if needed)
 typedef enum m68k_fpu_size {
+	M68K_FPU_SIZE_NONE = 0,		// unsized like fsave/frestore
 	M68K_FPU_SIZE_SINGLE = 4,		// 4 byte in size (single float) 
 	M68K_FPU_SIZE_DOUBLE = 8,		// 8 byte in size (double) 
 	M68K_FPU_SIZE_EXTENDED = 12,	// 12 byte in size (extended real format)
@@ -167,6 +168,8 @@ typedef enum m68k_fpu_size {
 
 // Type of size that is being used for the current instruction
 typedef enum m68k_size_type {
+	M68K_SIZE_TYPE_INVALID = 0,
+
 	M68K_SIZE_TYPE_CPU,
 	M68K_SIZE_TYPE_FPU,
 } m68k_size_type;
