@@ -313,6 +313,9 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	switch (info->op_size.type)
 	{
+		case M68K_SIZE_TYPE_INVALID :
+			break;
+
 		case M68K_SIZE_TYPE_CPU :
 		{
 			switch (info->op_size.cpu_size)
@@ -333,6 +336,7 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 				case M68K_FPU_SIZE_SINGLE  : SStream_concat0(O, ".s"); break;
 				case M68K_FPU_SIZE_DOUBLE  : SStream_concat0(O, ".d"); break;
 				case M68K_FPU_SIZE_EXTENDED  : SStream_concat0(O, ".x"); break;
+				case M68K_FPU_SIZE_NONE : break;  
 			}
 
 			break;
