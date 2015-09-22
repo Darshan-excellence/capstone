@@ -2566,7 +2566,7 @@ static void d68010_moves_32(void)
 
 static void d68000_moveq(void)
 {
-	cs_m68k* info = build_init_op(M68K_INS_MOVEQ, 2, 4);
+	cs_m68k* info = build_init_op(M68K_INS_MOVEQ, 2, 0);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
