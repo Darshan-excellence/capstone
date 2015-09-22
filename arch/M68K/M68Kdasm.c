@@ -413,7 +413,7 @@ void get_ea_mode_op(cs_m68k_op* op, uint instruction, uint size)
 		case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		{
 			/* address register indirect */
-			op->address_mode = M68K_AM_REG_DIRECT_ADDR;
+			op->address_mode = M68K_AM_REGI_ADDR;
 			op->reg = M68K_REG_A0 + (instruction & 7);
 			break;
 		}
