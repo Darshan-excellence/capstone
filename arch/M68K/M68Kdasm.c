@@ -1643,17 +1643,17 @@ static void d68000_clr_32(void)
 
 static void d68000_cmp_8(void)
 {
-	build_re_1(M68K_INS_CMP, 1);
+	build_er_1(M68K_INS_CMP, 1);
 }
 
 static void d68000_cmp_16(void)
 {
-	build_re_1(M68K_INS_CMP, 2);
+	build_er_1(M68K_INS_CMP, 2);
 }
 
 static void d68000_cmp_32(void)
 {
-	build_re_1(M68K_INS_CMP, 4);
+	build_er_1(M68K_INS_CMP, 4);
 }
 
 static void d68000_cmpa_16(void)
