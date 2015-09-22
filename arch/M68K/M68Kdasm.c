@@ -2400,7 +2400,7 @@ static void d68000_movea_32(void)
 
 static void d68000_move_to_ccr(void)
 {
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2415,7 +2415,7 @@ static void d68010_move_fr_ccr(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
 
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2428,7 +2428,7 @@ static void d68010_move_fr_ccr(void)
 
 static void d68000_move_fr_sr(void)
 {
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2443,7 +2443,7 @@ static void d68000_move_to_sr(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
 
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
