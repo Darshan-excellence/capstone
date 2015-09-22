@@ -974,9 +974,9 @@ static void build_move16(int data[2], int modes[2])
 	}
 }
 
-static void build_link(int disp)
+static void build_link(int disp, int size)
 {
-	cs_m68k* info = build_init_op(M68K_INS_LINK, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_LINK, 2, size);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -1616,17 +1616,17 @@ static void d68000_clr_32(void)
 
 static void d68000_cmp_8(void)
 {
-	build_re_1(M68K_INS_CMP, 1);
+	build_er_1(M68K_INS_CMP, 1);
 }
 
 static void d68000_cmp_16(void)
 {
-	build_re_1(M68K_INS_CMP, 2);
+	build_er_1(M68K_INS_CMP, 2);
 }
 
 static void d68000_cmp_32(void)
 {
-	build_re_1(M68K_INS_CMP, 4);
+	build_er_1(M68K_INS_CMP, 4);
 }
 
 static void d68000_cmpa_16(void)
@@ -2267,13 +2267,13 @@ static void d68000_lea(void)
 
 static void d68000_link_16(void)
 {
-	build_link(read_imm_16());
+	build_link(read_imm_16(), 2);
 }
 
 static void d68020_link_32(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
-	build_link(read_imm_32());
+	build_link(read_imm_32(), 4);
 }
 
 static void d68000_lsr_s_8(void)
@@ -2373,7 +2373,7 @@ static void d68000_movea_32(void)
 
 static void d68000_move_to_ccr(void)
 {
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2388,7 +2388,7 @@ static void d68010_move_fr_ccr(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
 
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2401,7 +2401,7 @@ static void d68010_move_fr_ccr(void)
 
 static void d68000_move_fr_sr(void)
 {
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2416,7 +2416,7 @@ static void d68000_move_to_sr(void)
 {
 	LIMIT_CPU_TYPES(M68010_PLUS);
 
-	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVE, 2, 2);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
