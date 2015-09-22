@@ -636,23 +636,6 @@ static void build_3bit_d(int opcode, int size)
 	op1->reg = M68K_REG_D0 + (g_cpu_ir & 7);
 }
 
-static void build_3bit_q(int opcode, int size)
-{
-	cs_m68k* info = build_init_op(opcode, 2, size);
-
-	cs_m68k_op* op0 = &info->operands[0];
-	cs_m68k_op* op1 = &info->operands[1];
-	
-	get_ea_mode_op(op0, g_cpu_ir, size);
-
-	op0->type = M68K_OP_IMM;
-	op0->address_mode = M68K_AM_IMMIDIATE;
-	op0->imm = (g_cpu_ir & 0xff);
-
-	op1->address_mode = M68K_AM_REG_DIRECT_DATA;
-	op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
-}
-
 static void build_3bit_ea(int opcode, int size)
 {
 	cs_m68k* info = build_init_op(opcode, 2, size);
@@ -2593,7 +2576,17 @@ static void d68010_moves_32(void)
 
 static void d68000_moveq(void)
 {
-	build_3bit_q(M68K_INS_MOVEQ, 0);
+	cs_m68k* info = build_init_op(M68K_INS_MOVEQ, 2, 4);
+
+	cs_m68k_op* op0 = &info->operands[0];
+	cs_m68k_op* op1 = &info->operands[1];
+	
+	op0->type = M68K_OP_IMM;
+	op0->address_mode = M68K_AM_IMMIDIATE;
+	op0->imm = (g_cpu_ir & 0xff);
+
+	op1->address_mode = M68K_AM_REG_DIRECT_DATA;
+	op1->reg = M68K_REG_D0 + ((g_cpu_ir >> 9) & 7);
 }
 
 static void d68040_move16_pi_pi(void)
