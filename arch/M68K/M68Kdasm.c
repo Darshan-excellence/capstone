@@ -168,14 +168,23 @@ typedef struct
 	uint mask;                    /* mask on opcode */
 	uint match;                   /* what to match after masking */
 	uint ea_mask;                 /* what ea modes are allowed */
+	uint mask2;                   /* mask the 2nd word */
+	uint match2;                  /* what to match after masking */
 } opcode_struct;
+
+typedef struct
+{
+	void (*instruction)(void);    /* handler function */
+	uint word2_mask;              /* mask the 2nd word */
+	uint word2_match;             /* what to match after masking */
+} instruction_struct;
 
 /* ======================================================================== */
 /* ================================= DATA ================================= */
 /* ======================================================================== */
 
 /* Opcode handler jump table */
-static void (*g_instruction_table[0x10000])(void);
+static instruction_struct g_instruction_table[0x10000];
 /* Flag if disassembler initialized */
 static int  g_initialized = 0;
 
@@ -3267,7 +3276,7 @@ static void d68020_unpk_mm(void)
 
 static opcode_struct g_opcode_info[] =
 {
-/*  opcode handler         mask    match   ea mask */
+/*  opcode handler         mask    match   ea_mask   mask2   match2*/
 	{d68000_1010         , 0xf000, 0xa000, 0x000},
 	{d68000_1111         , 0xf000, 0xf000, 0x000},
 	{d68000_abcd_rr      , 0xf1f8, 0xc100, 0x000},
@@ -3458,7 +3467,7 @@ static opcode_struct g_opcode_info[] =
 	{d68040_move16_al_ai , 0xfff8, 0xf618, 0x000},
 	{d68000_muls         , 0xf1c0, 0xc1c0, 0xbff},
 	{d68000_mulu         , 0xf1c0, 0xc0c0, 0xbff},
-	{d68020_mull         , 0xffc0, 0x4c00, 0xbff},
+	{d68020_mull         , 0xffc0, 0x4c00, 0xbff, 0x8bf8, 0x0000},
 	{d68000_nbcd         , 0xffc0, 0x4800, 0xbf8},
 	{d68000_neg_8        , 0xffc0, 0x4400, 0xbf8},
 	{d68000_neg_16       , 0xffc0, 0x4440, 0xbf8},
@@ -3647,7 +3656,7 @@ static void build_opcode_table(void)
 
 	for(i=0;i<0x10000;i++)
 	{
-		g_instruction_table[i] = d68000_illegal; /* default to illegal */
+		g_instruction_table[i].instruction = d68000_illegal; /* default to illegal */
 		opcode = i;
 		/* search through opcode info for a match */
 		for(ostruct = g_opcode_info;ostruct->opcode_handler != 0;ostruct++)
@@ -3663,7 +3672,9 @@ static void build_opcode_table(void)
 						continue;
 				if(valid_ea(opcode, ostruct->ea_mask))
 				{
-					g_instruction_table[i] = ostruct->opcode_handler;
+					g_instruction_table[i].instruction = ostruct->opcode_handler;
+					g_instruction_table[i].word2_mask = ostruct->mask2;
+					g_instruction_table[i].word2_match = ostruct->match2;
 					break;
 				}
 			}
@@ -3671,7 +3682,14 @@ static void build_opcode_table(void)
 	}
 }
 
-
+static int instruction_is_valid(const unsigned int instruction) {
+	instruction_struct *i = &g_instruction_table[instruction];
+	if (i->word2_mask && ((peek_imm_16() & i->word2_mask) != i->word2_match)) {
+		d68000_illegal();
+		return 0;
+	}
+        return 1;
+}
 
 /* ======================================================================== */
 /* ================================= API ================================== */
@@ -3733,7 +3751,9 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	g_cpu_pc = pc;
 	g_helper_str[0] = 0;
 	g_cpu_ir = read_imm_16();
-	g_instruction_table[g_cpu_ir]();
+	if (instruction_is_valid(g_cpu_ir)) {
+		g_instruction_table[g_cpu_ir].instruction();
+	}
 	return g_cpu_pc - pc;
 }
 
