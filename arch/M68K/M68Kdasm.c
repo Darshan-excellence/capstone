@@ -2648,18 +2648,13 @@ static void d68000_mulu(void)
 	build_er_1(M68K_INS_MULU, 2);
 }
 
-static void d68020_mull(void)
+static void d68020_mulul(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
 
-	cs_m68k* info = build_init_op(M68K_INS_MULS, 2, 4);
-
-	if (BIT_B((extension)))
-		MCInst_setOpcode(g_inst, M68K_INS_MULS);
-	else
-		MCInst_setOpcode(g_inst, M68K_INS_MULU);
+	cs_m68k* info = build_init_op(M68K_INS_MULU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2675,7 +2670,7 @@ static void d68020_mull(void)
 
 	if (!BIT_A(extension)) {
 		op1->type = M68K_OP_REG;
-		op1->reg = M68K_REG_D0 + reg_0;
+		op1->reg = M68K_REG_D0 + reg_1;
 	}
 }
 
@@ -3467,7 +3462,7 @@ static opcode_struct g_opcode_info[] =
 	{d68040_move16_al_ai , 0xfff8, 0xf618, 0x000},
 	{d68000_muls         , 0xf1c0, 0xc1c0, 0xbff},
 	{d68000_mulu         , 0xf1c0, 0xc0c0, 0xbff},
-	{d68020_mull         , 0xffc0, 0x4c00, 0xbff, 0x8bf8, 0x0000},
+	{d68020_mulul        , 0xffc0, 0x4c00, 0xbff, 0x8bf8, 0x0000},
 	{d68000_nbcd         , 0xffc0, 0x4800, 0xbf8},
 	{d68000_neg_8        , 0xffc0, 0x4400, 0xbf8},
 	{d68000_neg_16       , 0xffc0, 0x4440, 0xbf8},
@@ -3872,7 +3867,7 @@ unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cp
 				return 0;
 			if(g_instruction_table[instruction] == d68020_link_32)
 				return 0;
-			if(g_instruction_table[instruction] == d68020_mull)
+			if(g_instruction_table[instruction] == d68020_mulul)
 				return 0;
 			if(g_instruction_table[instruction] == d68020_pack_rr)
 				return 0;
