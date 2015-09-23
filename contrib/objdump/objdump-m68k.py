@@ -62,7 +62,7 @@ def dump_op_ea(insn, op):
     if op.address_mode == M68K_AM_REG_DIRECT_ADDR:
         return dump_op_reg(insn, op.reg) + "@"
     if op.address_mode == M68K_AM_REGI_ADDR:
-        return dump_op_reg(insn, op.reg) + "fixme-iaddr"
+        return dump_op_reg(insn, op.reg) + "@"
     if op.address_mode == M68K_AM_REGI_ADDR_POST_INC:
         return dump_op_reg(insn, op.reg) + "@+"
     if op.address_mode == M68K_AM_REGI_ADDR_PRE_DEC:
