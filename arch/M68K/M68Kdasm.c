@@ -2142,13 +2142,12 @@ static void d68020_divl(void)
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
-
-	cs_m68k* info = build_init_op(M68K_INS_DIVS, 2, 4);
-
+	uint insn_signed = 0;
+   
 	if (BIT_B((extension)))
-		MCInst_setOpcode(g_inst, M68K_INS_DIVS);
-	else
-		MCInst_setOpcode(g_inst, M68K_INS_DIVU);
+		insn_signed = 1;
+
+	cs_m68k* info = build_init_op(insn_signed ? M68K_INS_DIVS : M68K_INS_DIVU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2162,9 +2161,9 @@ static void d68020_divl(void)
 	op1->type = M68K_OP_REG_PAIR;
 	op1->register_bits = (reg_0 << 4) | reg_1; 
 
-	if (reg_0 == reg_1) {
+	if ((reg_0 == reg_1) || !BIT_A(extension)) {
 		op1->type = M68K_OP_REG;
-		op1->reg = M68K_REG_D0 + reg_0;
+		op1->reg = M68K_REG_D0 + reg_1;
 	}
 }
 
@@ -2648,13 +2647,17 @@ static void d68000_mulu(void)
 	build_er_1(M68K_INS_MULU, 2);
 }
 
-static void d68020_mulul(void)
+static void d68020_mull(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
+	uint insn_signed = 0;
+   
+	if (BIT_B((extension)))
+		insn_signed = 1;
 
-	cs_m68k* info = build_init_op(M68K_INS_MULU, 2, 4);
+	cs_m68k* info = build_init_op(insn_signed ? M68K_INS_MULS : M68K_INS_MULU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -3302,7 +3305,7 @@ static opcode_struct g_opcode_info[] =
 	{d68000_and_re_8     , 0xf1c0, 0xc100, 0x3f8},
 	{d68000_and_re_16    , 0xf1c0, 0xc140, 0x3f8},
 	{d68000_and_re_32    , 0xf1c0, 0xc180, 0x3f8},
-	{d68000_andi_to_ccr  , 0xffff, 0x023c, 0x000},
+	{d68000_andi_to_ccr  , 0xffff, 0x023c, 0x000, 0xff00, 0x0000},
 	{d68000_andi_to_sr   , 0xffff, 0x027c, 0x000},
 	{d68000_andi_8       , 0xffc0, 0x0200, 0xbf8},
 	{d68000_andi_16      , 0xffc0, 0x0240, 0xbf8},
@@ -3325,39 +3328,39 @@ static opcode_struct g_opcode_info[] =
 	{d68000_bcc_16       , 0xf0ff, 0x6000, 0x000},
 	{d68020_bcc_32       , 0xf0ff, 0x60ff, 0x000},
 	{d68000_bchg_r       , 0xf1c0, 0x0140, 0xbf8},
-	{d68000_bchg_s       , 0xffc0, 0x0840, 0xbf8},
+	{d68000_bchg_s       , 0xffc0, 0x0840, 0xbf8, 0xff00, 0x0000},
 	{d68000_bclr_r       , 0xf1c0, 0x0180, 0xbf8},
-	{d68000_bclr_s       , 0xffc0, 0x0880, 0xbf8},
-	{d68020_bfchg        , 0xffc0, 0xeac0, 0xa78},
-	{d68020_bfclr        , 0xffc0, 0xecc0, 0xa78},
-	{d68020_bfexts       , 0xffc0, 0xebc0, 0xa7b},
-	{d68020_bfextu       , 0xffc0, 0xe9c0, 0xa7b},
-	{d68020_bfffo        , 0xffc0, 0xedc0, 0xa7b},
-	{d68020_bfins        , 0xffc0, 0xefc0, 0xa78},
-	{d68020_bfset        , 0xffc0, 0xeec0, 0xa78},
-	{d68020_bftst        , 0xffc0, 0xe8c0, 0xa7b},
+	{d68000_bclr_s       , 0xffc0, 0x0880, 0xbf8, 0xff00, 0x0000},
+	{d68020_bfchg        , 0xffc0, 0xeac0, 0xa78, 0xf000, 0x0000},
+	{d68020_bfclr        , 0xffc0, 0xecc0, 0xa78, 0xf000, 0x0000},
+	{d68020_bfexts       , 0xffc0, 0xebc0, 0xa7b, 0x8000, 0x0000},
+	{d68020_bfextu       , 0xffc0, 0xe9c0, 0xa7b, 0x8000, 0x0000},
+	{d68020_bfffo        , 0xffc0, 0xedc0, 0xa7b, 0x8000, 0x0000},
+	{d68020_bfins        , 0xffc0, 0xefc0, 0xa78, 0x8000, 0x0000},
+	{d68020_bfset        , 0xffc0, 0xeec0, 0xa78, 0xf000, 0x0000},
+	{d68020_bftst        , 0xffc0, 0xe8c0, 0xa7b, 0xf000, 0x0000},
 	{d68010_bkpt         , 0xfff8, 0x4848, 0x000},
 	{d68000_bra_8        , 0xff00, 0x6000, 0x000},
 	{d68000_bra_16       , 0xffff, 0x6000, 0x000},
 	{d68020_bra_32       , 0xffff, 0x60ff, 0x000},
 	{d68000_bset_r       , 0xf1c0, 0x01c0, 0xbf8},
-	{d68000_bset_s       , 0xffc0, 0x08c0, 0xbf8},
+	{d68000_bset_s       , 0xffc0, 0x08c0, 0xbf8, 0xfe00, 0x0000 },
 	{d68000_bsr_8        , 0xff00, 0x6100, 0x000},
 	{d68000_bsr_16       , 0xffff, 0x6100, 0x000},
 	{d68020_bsr_32       , 0xffff, 0x61ff, 0x000},
 	{d68000_btst_r       , 0xf1c0, 0x0100, 0xbff},
-	{d68000_btst_s       , 0xffc0, 0x0800, 0xbfb},
-	{d68020_callm        , 0xffc0, 0x06c0, 0x27b},
-	{d68020_cas_8        , 0xffc0, 0x0ac0, 0x3f8},
-	{d68020_cas_16       , 0xffc0, 0x0cc0, 0x3f8},
-	{d68020_cas_32       , 0xffc0, 0x0ec0, 0x3f8},
-	{d68020_cas2_16      , 0xffff, 0x0cfc, 0x000},
-	{d68020_cas2_32      , 0xffff, 0x0efc, 0x000},
+	{d68000_btst_s       , 0xffc0, 0x0800, 0xbfb, 0xff00, 0x0000},
+	{d68020_callm        , 0xffc0, 0x06c0, 0x27b, 0xff00, 0x0000},
+	{d68020_cas_8        , 0xffc0, 0x0ac0, 0x3f8, 0xfe38, 0x0000},
+	{d68020_cas_16       , 0xffc0, 0x0cc0, 0x3f8, 0xfe38, 0x0000},
+	{d68020_cas_32       , 0xffc0, 0x0ec0, 0x3f8, 0xfe38, 0x0000},
+	{d68020_cas2_16      , 0xffff, 0x0cfc, 0x000, 0x0e38, 0x0000/*, 0x0e38, 0x0000 */},
+	{d68020_cas2_32      , 0xffff, 0x0efc, 0x000, 0x0e38, 0x0000/*, 0x0e38, 0x0000 */},
 	{d68000_chk_16       , 0xf1c0, 0x4180, 0xbff},
 	{d68020_chk_32       , 0xf1c0, 0x4100, 0xbff},
-	{d68020_chk2_cmp2_8  , 0xffc0, 0x00c0, 0x27b},
-	{d68020_chk2_cmp2_16 , 0xffc0, 0x02c0, 0x27b},
-	{d68020_chk2_cmp2_32 , 0xffc0, 0x04c0, 0x27b},
+	{d68020_chk2_cmp2_8  , 0xffc0, 0x00c0, 0x27b, 0x07ff, 0x0000},
+	{d68020_chk2_cmp2_16 , 0xffc0, 0x02c0, 0x27b, 0x07ff, 0x0000},
+	{d68020_chk2_cmp2_32 , 0xffc0, 0x04c0, 0x27b, 0x07ff, 0x0000},
 	{d68040_cinv         , 0xff20, 0xf400, 0x000},
 	{d68000_clr_8        , 0xffc0, 0x4200, 0xbf8},
 	{d68000_clr_16       , 0xffc0, 0x4240, 0xbf8},
@@ -3394,11 +3397,11 @@ static opcode_struct g_opcode_info[] =
 	{d68000_dbra         , 0xfff8, 0x51c8, 0x000},
 	{d68000_divs         , 0xf1c0, 0x81c0, 0xbff},
 	{d68000_divu         , 0xf1c0, 0x80c0, 0xbff},
-	{d68020_divl         , 0xffc0, 0x4c40, 0xbff},
+	{d68020_divl         , 0xff80, 0x4c00, 0xbff, 0x83f8, 0x0000},
 	{d68000_eor_8        , 0xf1c0, 0xb100, 0xbf8},
 	{d68000_eor_16       , 0xf1c0, 0xb140, 0xbf8},
 	{d68000_eor_32       , 0xf1c0, 0xb180, 0xbf8},
-	{d68000_eori_to_ccr  , 0xffff, 0x0a3c, 0x000},
+	{d68000_eori_to_ccr  , 0xffff, 0x0a3c, 0x000, 0xff00, 0x0000},
 	{d68000_eori_to_sr   , 0xffff, 0x0a7c, 0x000},
 	{d68000_eori_8       , 0xffc0, 0x0a00, 0xbf8},
 	{d68000_eori_16      , 0xffc0, 0x0a40, 0xbf8},
@@ -3451,18 +3454,18 @@ static opcode_struct g_opcode_info[] =
 	{d68000_movep_er_32  , 0xf1f8, 0x0148, 0x000},
 	{d68000_movep_re_16  , 0xf1f8, 0x0188, 0x000},
 	{d68000_movep_re_32  , 0xf1f8, 0x01c8, 0x000},
-	{d68010_moves_8      , 0xffc0, 0x0e00, 0x3f8},
-	{d68010_moves_16     , 0xffc0, 0x0e40, 0x3f8},
-	{d68010_moves_32     , 0xffc0, 0x0e80, 0x3f8},
+	{d68010_moves_8      , 0xffc0, 0x0e00, 0x3f8, 0x07ff, 0x0000},
+	{d68010_moves_16     , 0xffc0, 0x0e40, 0x3f8, 0x07ff, 0x0000},
+	{d68010_moves_32     , 0xffc0, 0x0e80, 0x3f8, 0x07ff, 0x0000},
 	{d68000_moveq        , 0xf100, 0x7000, 0x000},
-	{d68040_move16_pi_pi , 0xfff8, 0xf620, 0x000},
+	{d68040_move16_pi_pi , 0xfff8, 0xf620, 0x000, 0x8fff, 0x8000},
 	{d68040_move16_pi_al , 0xfff8, 0xf600, 0x000},
 	{d68040_move16_al_pi , 0xfff8, 0xf608, 0x000},
 	{d68040_move16_ai_al , 0xfff8, 0xf610, 0x000},
 	{d68040_move16_al_ai , 0xfff8, 0xf618, 0x000},
 	{d68000_muls         , 0xf1c0, 0xc1c0, 0xbff},
 	{d68000_mulu         , 0xf1c0, 0xc0c0, 0xbff},
-	{d68020_mulul        , 0xffc0, 0x4c00, 0xbff, 0x8bf8, 0x0000},
+	{d68020_mull         , 0xffc0, 0x4c00, 0xbff, 0x83f8, 0x0000},
 	{d68000_nbcd         , 0xffc0, 0x4800, 0xbf8},
 	{d68000_neg_8        , 0xffc0, 0x4400, 0xbf8},
 	{d68000_neg_16       , 0xffc0, 0x4440, 0xbf8},
@@ -3480,7 +3483,7 @@ static opcode_struct g_opcode_info[] =
 	{d68000_or_re_8      , 0xf1c0, 0x8100, 0x3f8},
 	{d68000_or_re_16     , 0xf1c0, 0x8140, 0x3f8},
 	{d68000_or_re_32     , 0xf1c0, 0x8180, 0x3f8},
-	{d68000_ori_to_ccr   , 0xffff, 0x003c, 0x000},
+	{d68000_ori_to_ccr   , 0xffff, 0x003c, 0x000, 0xff00, 0x0000},
 	{d68000_ori_to_sr    , 0xffff, 0x007c, 0x000},
 	{d68000_ori_8        , 0xffc0, 0x0000, 0xbf8},
 	{d68000_ori_16       , 0xffc0, 0x0040, 0xbf8},
@@ -3867,7 +3870,7 @@ unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cp
 				return 0;
 			if(g_instruction_table[instruction] == d68020_link_32)
 				return 0;
-			if(g_instruction_table[instruction] == d68020_mulul)
+			if(g_instruction_table[instruction] == d68020_mull)
 				return 0;
 			if(g_instruction_table[instruction] == d68020_pack_rr)
 				return 0;
