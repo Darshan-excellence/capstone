@@ -2142,13 +2142,12 @@ static void d68020_divl(void)
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
-
-	cs_m68k* info = build_init_op(M68K_INS_DIVS, 2, 4);
-
+	uint _signed = 0;
+   
 	if (BIT_B((extension)))
-		MCInst_setOpcode(g_inst, M68K_INS_DIVS);
-	else
-		MCInst_setOpcode(g_inst, M68K_INS_DIVU);
+		_signed = 1;
+
+	cs_m68k* info = build_init_op(_signed ? M68K_INS_DIVS : M68K_INS_DIVU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2162,9 +2161,9 @@ static void d68020_divl(void)
 	op1->type = M68K_OP_REG_PAIR;
 	op1->register_bits = (reg_0 << 4) | reg_1; 
 
-	if (reg_0 == reg_1) {
+	if ((reg_0 == reg_1) || !BIT_A(extension)) {
 		op1->type = M68K_OP_REG;
-		op1->reg = M68K_REG_D0 + reg_0;
+		op1->reg = M68K_REG_D0 + reg_1;
 	}
 }
 
@@ -2648,13 +2647,17 @@ static void d68000_mulu(void)
 	build_er_1(M68K_INS_MULU, 2);
 }
 
-static void d68020_mulul(void)
+static void d68020_mull(void)
 {
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
+	uint _signed = 0;
+   
+	if (BIT_B((extension)))
+		_signed = 1;
 
-	cs_m68k* info = build_init_op(M68K_INS_MULU, 2, 4);
+	cs_m68k* info = build_init_op(_signed ? M68K_INS_MULS : M68K_INS_MULU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -3460,9 +3463,9 @@ static opcode_struct g_opcode_info[] =
 	{d68040_move16_al_pi , 0xfff8, 0xf608, 0x000},
 	{d68040_move16_ai_al , 0xfff8, 0xf610, 0x000},
 	{d68040_move16_al_ai , 0xfff8, 0xf618, 0x000},
-	{d68000_muls         , 0xf1c0, 0xc1c0, 0xbff, 0x8bf8, 0x0800},
+	{d68000_muls         , 0xf1c0, 0xc1c0, 0xbff},
 	{d68000_mulu         , 0xf1c0, 0xc0c0, 0xbff},
-	{d68020_mulul        , 0xffc0, 0x4c00, 0xbff, 0x8bf8, 0x0000},
+	{d68020_mull         , 0xffc0, 0x4c00, 0xbff, 0x83f8, 0x0000},
 	{d68000_nbcd         , 0xffc0, 0x4800, 0xbf8},
 	{d68000_neg_8        , 0xffc0, 0x4400, 0xbf8},
 	{d68000_neg_16       , 0xffc0, 0x4440, 0xbf8},
@@ -3867,7 +3870,7 @@ unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cp
 				return 0;
 			if(g_instruction_table[instruction] == d68020_link_32)
 				return 0;
-			if(g_instruction_table[instruction] == d68020_mulul)
+			if(g_instruction_table[instruction] == d68020_mull)
 				return 0;
 			if(g_instruction_table[instruction] == d68020_pack_rr)
 				return 0;
