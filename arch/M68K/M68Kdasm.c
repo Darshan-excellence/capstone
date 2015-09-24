@@ -2142,12 +2142,12 @@ static void d68020_divl(void)
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
-	uint _signed = 0;
+	uint insn_signed = 0;
    
 	if (BIT_B((extension)))
-		_signed = 1;
+		insn_signed = 1;
 
-	cs_m68k* info = build_init_op(_signed ? M68K_INS_DIVS : M68K_INS_DIVU, 2, 4);
+	cs_m68k* info = build_init_op(insn_signed ? M68K_INS_DIVS : M68K_INS_DIVU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -2652,12 +2652,12 @@ static void d68020_mull(void)
 	LIMIT_CPU_TYPES(M68020_PLUS);
 
 	uint extension = read_imm_16();
-	uint _signed = 0;
+	uint insn_signed = 0;
    
 	if (BIT_B((extension)))
-		_signed = 1;
+		insn_signed = 1;
 
-	cs_m68k* info = build_init_op(_signed ? M68K_INS_MULS : M68K_INS_MULU, 2, 4);
+	cs_m68k* info = build_init_op(insn_signed ? M68K_INS_MULS : M68K_INS_MULU, 2, 4);
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
