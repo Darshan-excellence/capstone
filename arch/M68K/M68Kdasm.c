@@ -242,7 +242,7 @@ static m68k_insn s_trap_lut[] = {
 #define LIMIT_CPU_TYPES(ALLOWED_CPU_TYPES)	\
 	if(!(g_cpu_type & ALLOWED_CPU_TYPES))	\
 	{										\
-		d68000_illegal();					\
+		d68000_invalid();					\
 		return;								\
 	}
 
@@ -3668,7 +3668,7 @@ static void build_opcode_table(void)
 
 	for(i=0;i<0x10000;i++)
 	{
-		g_instruction_table[i].instruction = d68000_illegal; /* default to illegal */
+		g_instruction_table[i].instruction = d68000_invalid; /* default to invalid, undecoded opcode */
 		opcode = i;
 		/* search through opcode info for a match */
 		for(ostruct = g_opcode_info;ostruct->opcode_handler != 0;ostruct++)
@@ -3697,7 +3697,7 @@ static void build_opcode_table(void)
 static int instruction_is_valid(const unsigned int instruction) {
 	instruction_struct *i = &g_instruction_table[instruction];
 	if (i->word2_mask && ((peek_imm_16() & i->word2_mask) != i->word2_match)) {
-		d68000_illegal();
+		d68000_invalid();
 		return 0;
 	}
         return 1;
@@ -3783,7 +3783,7 @@ unsigned int m68k_is_valid_instruction(unsigned int instruction, unsigned int cp
 	}
 
 	instruction &= 0xffff;
-	if(g_instruction_table[instruction] == d68000_illegal)
+	if(g_instruction_table[instruction] == d68000_invalid)
 		return 0;
 
 	switch(cpu_type)
