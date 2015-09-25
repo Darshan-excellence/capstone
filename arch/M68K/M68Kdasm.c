@@ -160,6 +160,8 @@ static int make_int_16(int value);
 static void build_opcode_table(void);
 static int valid_ea(uint opcode, uint mask);
 static int DECL_SPEC compare_nof_true_bits(const void *aptr, const void *bptr);
+static void d68000_invalid(void);
+static int instruction_is_valid(const unsigned int instruction, const unsigned int word_check);
 
 /* used to build opcode handler jump table */
 typedef struct
@@ -923,6 +925,11 @@ static void build_invalid(int data)
 static void build_cas2(int size)
 {
 	cs_m68k* info = build_init_op(M68K_INS_CAS2, 3, size);
+
+	/* cas2 is the only 3 words instruction, word2 and word3 have the same motif bits to check */
+	uint word3 = peek_imm_32() & 0xffff;
+	if(!instruction_is_valid(g_cpu_ir, word3))
+		return;
 
 	cs_m68k_op* op0 = &info->operands[0];
 	cs_m68k_op* op1 = &info->operands[1];
@@ -3694,9 +3701,9 @@ static void build_opcode_table(void)
 	}
 }
 
-static int instruction_is_valid(const unsigned int instruction) {
+static int instruction_is_valid(const unsigned int instruction, const unsigned int word_check) {
 	instruction_struct *i = &g_instruction_table[instruction];
-	if (i->word2_mask && ((peek_imm_16() & i->word2_mask) != i->word2_match)) {
+	if (i->word2_mask && ((word_check & i->word2_mask) != i->word2_match)) {
 		d68000_invalid();
 		return 0;
 	}
@@ -3763,7 +3770,7 @@ unsigned int m68k_disassemble(MCInst* inst, unsigned int pc, unsigned int cpu_ty
 	g_cpu_pc = pc;
 	g_helper_str[0] = 0;
 	g_cpu_ir = read_imm_16();
-	if (instruction_is_valid(g_cpu_ir)) {
+	if (instruction_is_valid(g_cpu_ir, peek_imm_16())) {
 		g_instruction_table[g_cpu_ir].instruction();
 	}
 	return g_cpu_pc - pc;
