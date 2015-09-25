@@ -897,17 +897,27 @@ static void build_movem_er(int opcode, int size)
 	op1->register_bits = read_imm_16(); 
 }
 
-static void build_illegal(int data)
+static void build_imm(int opcode, int data)
 {
-	cs_m68k* info = build_init_op(M68K_INS_ILLEGAL, 1, 0);
+	cs_m68k* info = build_init_op(opcode, 1, 0);
 
-	MCInst_setOpcode(g_inst, M68K_INS_ILLEGAL);
+	MCInst_setOpcode(g_inst, opcode);
 
 	cs_m68k_op* op = &info->operands[0];
 
 	op->type = M68K_OP_IMM;
 	op->address_mode = M68K_AM_IMMIDIATE;
 	op->imm = data;
+}
+
+static void build_illegal(int data)
+{
+	build_imm(M68K_INS_ILLEGAL, data);
+}
+
+static void build_invalid(int data)
+{
+	build_imm(M68K_INS_INVALID, data);
 }
 
 static void build_cas2(int size)
@@ -1129,6 +1139,10 @@ static void build_er_a_1(int opcode, uint8_t size)
  */
 
 
+static void d68000_invalid(void)
+{
+	build_invalid(g_cpu_ir);
+}
 
 static void d68000_illegal(void)
 {
