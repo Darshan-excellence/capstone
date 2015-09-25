@@ -79,7 +79,7 @@ def dump_ops(insn):
             str += ','
         mnemonic = insn.insn_name()
         op = insn.operands[i]
-        if mnemonic == "illegal":
+        if mnemonic == "invalid":
             str += format("0x%04x" % (op.imm))
             break
         if op.type == M68K_OP_REG:
@@ -132,7 +132,7 @@ def dump_mnemonic(insn):
     no_size += sxx_insn
     if mnemonic in no_size:
         ext.update({ 0:'', 1:'', 2:'', 4:'' })
-    if mnemonic == "illegal":
+    if mnemonic == "invalid":
         return ".short"
     return mnemonic + ext[insn.op_size.size]
 
