@@ -311,7 +311,11 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 
 	const int op_count = info->op_count;
 
-	SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
+	if (MI->Opcode == M68K_INS_INVALID) {
+		SStream_concat0(O, "dc.w");
+	} else {
+		SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
+	}
 
 	switch (info->op_size.type)
 	{
