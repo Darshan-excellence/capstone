@@ -312,7 +312,8 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 	const int op_count = info->op_count;
 
 	if (MI->Opcode == M68K_INS_INVALID) {
-		SStream_concat0(O, "dc.w");
+		SStream_concat(O, "dc.w $%x", info->operands[0].imm);
+		return;
 	} else {
 		SStream_concat0(O, (char*)s_instruction_names[MI->Opcode]);
 	}
