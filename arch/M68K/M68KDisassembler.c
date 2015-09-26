@@ -307,7 +307,11 @@ void M68K_printInst(MCInst* MI, SStream* O, void* Info)
 #ifndef CAPSTONE_DIET
 	int i = 0;
 
-	cs_m68k* info = &MI->flat_insn->detail->m68k;
+	cs_detail *detail = MI->flat_insn->detail;
+	if (!detail) {
+		return;
+	}
+	cs_m68k* info = &detail->m68k;
 
 	const int op_count = info->op_count;
 
