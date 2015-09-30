@@ -69,6 +69,14 @@ def dump_op_ea(insn, op):
         return dump_op_reg(insn, op.reg) + "@-"
     if op.address_mode == M68K_AM_REGI_ADDR_DISP:
         return dump_op_reg(insn, op.reg) + format("@(%d)" % s16(op.mem.disp))
+
+    if op.address_mode == M68K_AM_AREGI_INDEX_BASE_DISP:
+        if op.mem.index_size:
+            str_size = "l"
+        else:
+            str_size = "w"
+        bits = op.mem.disp
+        return dump_op_reg(insn, op.mem.base_reg) + "@(" + "{0:016b}".format(bits) + "," + dump_op_reg(insn, op.mem.index_reg) + ":" + str_size + ")" 
     return ''
 
 def dump_ops(insn):
