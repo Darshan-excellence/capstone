@@ -727,7 +727,7 @@ static void build_pi_pi(int opcode, int size)
 	cs_m68k_op* op1 = &info->operands[1];
 
 	op0->address_mode = M68K_AM_REGI_ADDR_POST_INC;
-	op0->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
+	op0->reg = M68K_REG_A0 + (g_cpu_ir & 7);
 
 	op1->address_mode = M68K_AM_REGI_ADDR_POST_INC;
 	op1->reg = M68K_REG_A0 + ((g_cpu_ir >> 9) & 7);
