@@ -14,6 +14,7 @@ static cs_err init(cs_struct *ud)
 	ud->printer_info = 0;
 	ud->getinsn_info = 0;
 	ud->disasm = M68K_getInstruction;
+	ud->skipdata_size = 2;
 	ud->post_printer = 0;
 
 	ud->reg_name = M68K_reg_name;
