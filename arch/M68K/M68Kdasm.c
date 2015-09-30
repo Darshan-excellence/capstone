@@ -1218,12 +1218,12 @@ static void d68000_illegal(void)
 
 static void d68000_1010(void)
 {
-	build_illegal(g_cpu_ir);
+	build_invalid(g_cpu_ir);
 }
 
 static void d68000_1111(void)
 {
-	build_illegal(g_cpu_ir);
+	build_invalid(g_cpu_ir);
 }
 
 static void d68000_abcd_rr(void)
