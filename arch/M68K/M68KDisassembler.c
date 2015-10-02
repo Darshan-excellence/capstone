@@ -249,7 +249,7 @@ void printAddressingMode(SStream* O, const cs_m68k* inst, const cs_m68k_op* op)
 			if (op->mem.scale > 0)
 				SStream_concat(O, "%s*%s%d)", s_spacing, s_spacing, op->mem.scale);
 			else
-				SStream_concat(O, ")", op->mem.scale);
+				SStream_concat(O, ")");
 
 			break;
 		}
